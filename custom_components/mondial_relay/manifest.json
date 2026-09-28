@@ -1,0 +1,15 @@
+{
+  "domain": "mondial_relay",
+  "name": "Mondial Relay",
+  "codeowners": [
+    "@peter-mdf"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ha-parcel-integrations/ha-mondial-relay",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ha-parcel-integrations/ha-mondial-relay/issues",
+  "quality_scale": "silver",
+  "requirements": [],
+  "version": "0.1.0"
+}

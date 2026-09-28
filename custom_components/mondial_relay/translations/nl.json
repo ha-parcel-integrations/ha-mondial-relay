@@ -1,0 +1,125 @@
+{
+  "title": "Mondial Relay",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Mondial Relay instellen",
+        "description": "Open dit adres in een browser en meld je aan met je Mondial Relay (InPost Group)-account:\n\n{authorize_url}\n\nDe pagina laadt daarna niet verder — dat is normaal. Kopieer de volledige URL uit de adresbalk van je browser en plak die hieronder.",
+        "data": {
+          "callback_url": "Callback-URL"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Aanmelding bij Mondial Relay verlopen",
+        "description": "Open dit adres in een browser en meld je opnieuw aan:\n\n{authorize_url}\n\nDe pagina laadt daarna niet verder — dat is normaal. Kopieer de volledige URL uit de adresbalk van je browser en plak die hieronder.",
+        "data": {
+          "callback_url": "Callback-URL"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Mondial Relay heeft de aanmelding geweigerd.",
+      "invalid_redirect": "Dat lijkt niet op het adres waar de aanmeldpagina je naartoe stuurde. Zorg dat je de hele URL na het aanmelden hebt gekopieerd.",
+      "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw."
+    },
+    "abort": {
+      "already_configured": "Dat Mondial Relay-account is al ingesteld.",
+      "reauth_successful": "Mondial Relay is opnieuw geverifieerd.",
+      "wrong_account": "Die aanmelding hoort bij een ander Mondial Relay-account. Meld je aan met het account waarvoor deze integratie is ingesteld."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mondial Relay-opties",
+        "sections": {
+          "delivered": {
+            "name": "Bezorgde pakketten",
+            "data": {
+              "delivered_filter_type": "Filteren op",
+              "delivered_filter_amount": "Aantal"
+            },
+            "data_description": {
+              "delivered_filter_type": "Toon bezorgde pakketten van de laatste X dagen, of beperk tot de X meest recente.",
+              "delivered_filter_amount": "Aantal dagen of pakketten om te tonen."
+            }
+          },
+          "history": {
+            "name": "Pakketgeschiedenis",
+            "data": {
+              "include_history": "Statusgeschiedenis toevoegen"
+            },
+            "data_description": {
+              "include_history": "Gereserveerd voor een latere release — het accountsysteem van Mondial Relay heeft momenteel geen tijdlijn per gebeurtenis om hier te tonen."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "delivered_filter_type": {
+      "options": {
+        "days": "Dagen",
+        "parcels": "Aantal pakketten"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "parcel_registered": "Een pakket is geregistreerd",
+      "parcel_status_changed": "De status van een pakket is gewijzigd",
+      "parcel_delivered": "Een pakket is bezorgd",
+      "parcel_delivery_time_changed": "De verwachte bezorgtijd van een pakket is gewijzigd",
+      "outgoing_parcel_status_changed": "De status van een verzonden pakket is gewijzigd",
+      "outgoing_parcel_delivered": "Een verzonden pakket is bezorgd"
+    }
+  },
+  "entity": {
+    "button": {
+      "refresh": {
+        "name": "Verversen"
+      }
+    },
+    "calendar": {
+      "deliveries": {
+        "name": "Bezorgingen"
+      }
+    },
+    "sensor": {
+      "incoming_parcels": {
+        "name": "Inkomende pakketten",
+        "unit_of_measurement": "pakketten"
+      },
+      "next_delivery": {
+        "name": "Volgende bezorging"
+      },
+      "en_route_to_pickup_point": {
+        "name": "Onderweg naar ophaalpunt",
+        "unit_of_measurement": "pakketten"
+      },
+      "awaiting_pickup": {
+        "name": "Klaar om op te halen",
+        "unit_of_measurement": "pakketten"
+      },
+      "delivered_parcels": {
+        "name": "Bezorgde pakketten",
+        "unit_of_measurement": "pakketten"
+      },
+      "outgoing_parcels": {
+        "name": "Verzonden pakketten",
+        "unit_of_measurement": "pakketten"
+      },
+      "outgoing_delivered_parcels": {
+        "name": "Verzonden pakketten bezorgd",
+        "unit_of_measurement": "pakketten"
+      },
+      "last_update": {
+        "name": "Laatste succesvolle update"
+      },
+      "parcel": {
+        "name": "Pakket {barcode}"
+      }
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "title": "Mondial Relay",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Mondial Relay",
+        "description": "Open this address in a browser and sign in with your Mondial Relay (InPost Group) account:\n\n{authorize_url}\n\nThe page will not finish loading afterwards — that is expected. Copy the full address from your browser's address bar and paste it below.",
+        "data": {
+          "callback_url": "Callback URL"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Mondial Relay sign-in expired",
+        "description": "Open this address in a browser and sign in again:\n\n{authorize_url}\n\nThe page will not finish loading afterwards — that is expected. Copy the full address from your browser's address bar and paste it below.",
+        "data": {
+          "callback_url": "Callback URL"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Mondial Relay rejected the sign-in.",
+      "invalid_redirect": "That does not look like the address the sign-in page redirected you to. Make sure you copied the whole thing after signing in.",
+      "cannot_connect": "Could not reach Mondial Relay. Please try again."
+    },
+    "abort": {
+      "already_configured": "That Mondial Relay account is already set up.",
+      "reauth_successful": "Mondial Relay was reauthenticated successfully.",
+      "wrong_account": "That sign-in was for a different Mondial Relay account. Sign in with the account this entry was set up for."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mondial Relay options",
+        "sections": {
+          "delivered": {
+            "name": "Delivered parcels",
+            "data": {
+              "delivered_filter_type": "Filter by",
+              "delivered_filter_amount": "Amount"
+            },
+            "data_description": {
+              "delivered_filter_type": "Show delivered parcels from the last X days, or limit to the X most recent.",
+              "delivered_filter_amount": "Number of days or parcels to show."
+            }
+          },
+          "history": {
+            "name": "Parcel history",
+            "data": {
+              "include_history": "Include status history"
+            },
+            "data_description": {
+              "include_history": "Reserved for a future release — Mondial Relay's account backend currently has no per-event timeline to show here."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "delivered_filter_type": {
+      "options": {
+        "days": "Days",
+        "parcels": "Number of parcels"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "parcel_registered": "A parcel was registered",
+      "parcel_status_changed": "A parcel's status changed",
+      "parcel_delivered": "A parcel was delivered",
+      "parcel_delivery_time_changed": "A parcel's expected delivery time changed",
+      "outgoing_parcel_status_changed": "A sent parcel's status changed",
+      "outgoing_parcel_delivered": "A sent parcel was delivered"
+    }
+  },
+  "entity": {
+    "button": {
+      "refresh": {
+        "name": "Refresh"
+      }
+    },
+    "calendar": {
+      "deliveries": {
+        "name": "Deliveries"
+      }
+    },
+    "sensor": {
+      "incoming_parcels": {
+        "name": "Incoming parcels",
+        "unit_of_measurement": "parcels"
+      },
+      "next_delivery": {
+        "name": "Next delivery"
+      },
+      "en_route_to_pickup_point": {
+        "name": "En route to pickup point",
+        "unit_of_measurement": "parcels"
+      },
+      "awaiting_pickup": {
+        "name": "Awaiting pickup",
+        "unit_of_measurement": "parcels"
+      },
+      "delivered_parcels": {
+        "name": "Delivered parcels",
+        "unit_of_measurement": "parcels"
+      },
+      "outgoing_parcels": {
+        "name": "Outgoing parcels",
+        "unit_of_measurement": "parcels"
+      },
+      "outgoing_delivered_parcels": {
+        "name": "Outgoing delivered parcels",
+        "unit_of_measurement": "parcels"
+      },
+      "last_update": {
+        "name": "Last successful update"
+      },
+      "parcel": {
+        "name": "Parcel {barcode}"
+      }
+    }
+  }
+}
