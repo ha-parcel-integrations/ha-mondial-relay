@@ -25,7 +25,8 @@
       }
     },
     "error": {
-      "invalid_auth": "Mondial Relay heeft de aanmelding geweigerd.",
+      "invalid_auth": "Mondial Relay heeft die aanmelding geweigerd. Het adres dat een aanmelding oplevert is eenmalig en verloopt snel \u2014 open de link hierboven opnieuw en plak het nieuwe adres.",
+      "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay accepteerde het account niet. Heb je dit account nog niet in de Mondial Relay-app gebruikt? Open de app dan één keer, rond de installatie af en probeer het daarna opnieuw.",
       "invalid_redirect": "Dat lijkt niet op het adres waar de aanmeldpagina je naartoe stuurde. Zorg dat je de hele URL na het aanmelden hebt gekopieerd.",
       "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw."
     },

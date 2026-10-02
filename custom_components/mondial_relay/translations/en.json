@@ -25,7 +25,8 @@
       }
     },
     "error": {
-      "invalid_auth": "Mondial Relay rejected the sign-in.",
+      "invalid_auth": "Mondial Relay rejected that sign-in. The address a sign-in produces can only be used once and expires quickly \u2014 open the link above again and paste the new address.",
+      "account_rejected": "Signing in worked, but Mondial Relay's account service would not accept the account. If you have not used this account in the Mondial Relay app yet, open the app once, finish its setup, and then try again.",
       "invalid_redirect": "That does not look like the address the sign-in page redirected you to. Make sure you copied the whole thing after signing in.",
       "cannot_connect": "Could not reach Mondial Relay. Please try again."
     },

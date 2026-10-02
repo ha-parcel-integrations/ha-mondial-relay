@@ -79,6 +79,15 @@ is `MondialRelaySigningRejectedError` (headers from `signing.py` rejected) →
 abort the poll, keep last-good data, log one WARNING, never reauth or fall
 back; only an integration update fixes it.
 
+**Setup has two refusals too, and they must stay separate.** A rejected code
+exchange (the identity provider's own `400`/`401`, carried on
+`MondialRelayOAuthError.error_code`) is `invalid_auth` — almost always a
+reused or expired authorization code, which a fresh sign-in fixes. A `401`
+from the account backend with tokens the provider just issued is
+`account_rejected`: the sign-in worked and no other pasted URL will help, so
+never show it as a rejected sign-in. Both log one WARNING naming which side
+refused — without that a bug report cannot tell them apart (#4).
+
 **Pre-1.0: `status` is always `unknown`, `raw_status` is `str(stepSection)`.**
 `expedition.stepSection` is a plain integer with no confirmed vocabulary (a
 single live sample showed `3`; the app's own reconstructed string enum did

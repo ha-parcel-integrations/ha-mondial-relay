@@ -134,7 +134,14 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         oauth = self._get_oauth()
         try:
             await oauth.async_exchange_code(code, self._code_verifier or "")
-        except MondialRelayOAuthAuthError:
+        except MondialRelayOAuthAuthError as err:
+            # Logged, and reported separately from the account-backend
+            # refusal below: one shared message leaves a bug report unable to
+            # say which side refused.
+            _LOGGER.warning(
+                "The identity provider rejected the pasted sign-in (%s)",
+                err.error_code or err.status_code or "no error code",
+            )
             return "invalid_auth"
         except (MondialRelayOAuthError, aiohttp.ClientError, TimeoutError):
             _LOGGER.debug("Failed to exchange the pasted callback URL", exc_info=True)
@@ -147,7 +154,11 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         try:
             await client.async_validate()
         except MondialRelayAuthError:
-            return "invalid_auth"
+            _LOGGER.warning(
+                "Signing in succeeded, but the Mondial Relay account backend "
+                "rejected the account's own token with HTTP 401"
+            )
+            return "account_rejected"
         except MondialRelaySigningRejectedError:
             # The user did everything right; this integration's own request
             # was rejected. Not something a different callback URL fixes.
@@ -168,6 +179,9 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         cannot sign in a non-Polish account at all.
         """
         if user_input is not None:
+            # A link already built for a previous answer points at the wrong
+            # market's sign-in page.
+            self._authorize_url = None
             self._market = user_input[CONF_COUNTRY].upper()
             return await self.async_step_sign_in()
         return self.async_show_form(

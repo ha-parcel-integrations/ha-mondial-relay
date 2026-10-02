@@ -173,6 +173,8 @@ logger:
 
 - **Every parcel shows `unknown`** — expected pre-1.0; see the note at the top of this README. The carrier's own progress value is still visible as `raw_status` on the parcel sensor.
 - **"Mondial Relay rejected this integration's request" in the log** — this is not a problem with your account, and signing in again will not fix it. Check for an integration update, and if none is available, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new).
+- **"Mondial Relay rejected that sign-in"** — the address a sign-in produces can only be used once and expires within minutes. Open the sign-in link again, sign in again, and paste the fresh address straight away.
+- **"Mondial Relay's account service would not accept the account"** — the sign-in itself worked, so pasting a different address will not help. If this account has never been used in the Mondial Relay app, open the app once and finish its setup, then try again; if it has, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new) and include the warning logged under `custom_components.mondial_relay`.
 - **A reauth prompt appears** — your Mondial Relay sign-in has expired or was revoked; repeat the browser sign-in step from [Configuration](#configuration). It reuses the country the entry was set up with.
 - **The sign-in page asks for a Polish phone number** — the country was set up as a market whose sign-in page you do not have an account on. Remove the entry and add it again with the right country.
 

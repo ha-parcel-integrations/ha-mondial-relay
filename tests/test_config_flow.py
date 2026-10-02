@@ -11,6 +11,7 @@ from custom_components.mondial_relay.api import (
     MondialRelayAuthError,
     MondialRelaySigningRejectedError,
 )
+from custom_components.mondial_relay.config_flow import MondialRelayConfigFlow
 from custom_components.mondial_relay.const import (
     CONF_ACCOUNT_SUBJECT,
     CONF_COUNTRY,
@@ -177,7 +178,9 @@ async def test_user_flow_surfaces_exchange_connection_error(hass):
 @pytest.mark.parametrize(
     "validate_error,expected",
     [
-        (MondialRelayAuthError("HTTP 401"), "invalid_auth"),
+        # Not invalid_auth: the sign-in itself worked, so a different
+        # callback URL cannot fix it.
+        (MondialRelayAuthError("HTTP 401"), "account_rejected"),
         (MondialRelaySigningRejectedError("HTTP 403"), "cannot_connect"),
         (MondialRelayApiError("HTTP 500"), "cannot_connect"),
         (aiohttp.ClientError("boom"), "cannot_connect"),
@@ -193,6 +196,22 @@ async def test_user_flow_surfaces_validation_errors(hass, validate_error, expect
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
     assert result["errors"] == {"base": expected}
+
+
+async def test_country_step_rebuilds_the_link_when_the_answer_changes(hass):
+    """A link built for the previous answer points at the wrong market."""
+    flow = MondialRelayConfigFlow()
+    flow.hass = hass
+    flow.flow_id = "flow-1"
+    flow.handler = DOMAIN
+    oauth = _fake_oauth()
+    with patch(OAUTH_CLASS, return_value=oauth):
+        await flow.async_step_user({CONF_COUNTRY: "fr"})
+        await flow.async_step_user({CONF_COUNTRY: "be"})
+    markets = [
+        call.kwargs["market"] for call in oauth.build_authorization_url.call_args_list
+    ]
+    assert markets == ["FR", "BE"]
 
 
 async def test_user_flow_aborts_on_duplicate_account(hass):

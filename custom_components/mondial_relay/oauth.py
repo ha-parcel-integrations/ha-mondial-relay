@@ -61,10 +61,17 @@ _MARKET_LANGUAGES = {
 class MondialRelayOAuthError(Exception):
     """Raised when the identity provider can't hand out a usable token."""
 
-    def __init__(self, message: str, *, status_code: int | None = None) -> None:
-        """Store the message and, where available, the HTTP status code."""
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        error_code: str | None = None,
+    ) -> None:
+        """Store the message and, where available, the status and error code."""
         super().__init__(message)
         self.status_code = status_code
+        self.error_code = error_code
 
 
 class MondialRelayOAuthAuthError(MondialRelayOAuthError):
@@ -315,6 +322,7 @@ class MondialRelayOAuthSession:
                 raise MondialRelayOAuthAuthError(
                     f"the identity provider rejected the token request ({error or response.status})",
                     status_code=response.status,
+                    error_code=str(error) if error else None,
                 )
             raise MondialRelayOAuthError(
                 f"token endpoint returned HTTP {response.status}",

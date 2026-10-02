@@ -175,8 +175,11 @@ async def test_exchange_code_without_refresh_token_raises():
 async def test_exchange_code_rejected_raises_auth_error():
     http = _session_returning(_response(400, {"error": "invalid_grant"}))
     session = MondialRelayOAuthSession(http)
-    with pytest.raises(MondialRelayOAuthAuthError):
+    with pytest.raises(MondialRelayOAuthAuthError) as err:
         await session.async_exchange_code("code-1", "verifier-1")
+    # Carried through so the config flow can log which refusal it was.
+    assert err.value.error_code == "invalid_grant"
+    assert err.value.status_code == 400
 
 
 async def test_exchange_code_outage_raises_plain_error():
