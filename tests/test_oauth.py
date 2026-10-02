@@ -17,6 +17,7 @@ from custom_components.mondial_relay.oauth import (
     generate_state,
     is_valid_callback_url,
     parse_callback_url,
+    sign_in_language,
 )
 
 
@@ -120,6 +121,37 @@ def test_build_authorization_url_contains_client_and_challenge():
     assert "mondialrelay-mobile" in url
     assert "code_challenge=" in url
     assert verifier and state
+
+
+def test_build_authorization_url_scopes_the_page_to_brand_and_market():
+    """Without these the provider serves the Polish-only InPost sign-up."""
+    session = MondialRelayOAuthSession(MagicMock())
+    url, _, _ = session.build_authorization_url(language="nl", market="BE")
+    assert "brand=mr" in url
+    assert "supported_markets=BE" in url
+    assert "lang=nl-BE" in url
+
+
+@pytest.mark.parametrize(
+    "language,market,expected",
+    [
+        (None, "FR", "fr-FR"),
+        ("en", "FR", "fr-FR"),
+        # Belgium is bilingual: Home Assistant's own language picks the side.
+        ("nl", "BE", "nl-BE"),
+        ("fr", "BE", "fr-BE"),
+        ("en", "BE", "fr-BE"),
+        ("nl", "NL", "nl-NL"),
+        # No Spanish or Portuguese sign-in translation exists, but the tag's
+        # region still drives the phone step's dial code.
+        ("es", "ES", "es-ES"),
+        ("en", "PT", "pt-PT"),
+        # An unknown market must not produce an unknown language tag.
+        ("nl", "XX", "fr-FR"),
+    ],
+)
+def test_sign_in_language(language, market, expected):
+    assert sign_in_language(language, market) == expected
 
 
 async def test_exchange_code_stores_tokens():

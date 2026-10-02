@@ -57,6 +57,22 @@ password. `pop_refresh_token_changed()` must be drained after every poll
 (`__init__.py`'s coordinator listener) or a silently rotated refresh token is
 lost on restart.
 
+**The sign-in URL's `brand`/`lang`/`supported_markets` are load-bearing.**
+Drop any of them and `account.inpost-group.com` serves the *generic InPost*
+sign-up (`data-brand="inpost"`, Polish copy) instead of Mondial Relay's — and
+that page's phone step is locked to +48 with no other dial code on offer, so
+no French, Belgian, Dutch, Spanish or Portuguese account can be created or
+signed in to at all (#4). `brand=mr` is the switch: live-confirmed
+2026-10-02, `supported_markets=BE&lang=nl-BE` *without* `brand` still renders
+the Polish page. The market therefore has to be asked **before** the link is
+built — hence `CONF_MARKET` in `entry.data` and the country step ahead of the
+paste step, reused as-is on reauth. `ACCOUNT_MARKETS` is the live-confirmed
+set (`FR`/`BE`/`NL`/`ES`/`PT`); anything else is an HTTP 400 on the authorize
+call, so never widen it by guessing. `lang` carries a region because the
+page's own `resolveInitialPhonePrefix` falls back to the locale's region to
+preselect a dial code — which is also why `es-ES`/`pt-PT` are sent even
+though that page has no Spanish or Portuguese translation and renders French.
+
 **Two different failure paths — never merge them.** A 401 (rejected *user*
 token) is `MondialRelayAuthError` → HA reauth. A 403 with a valid user token
 is `MondialRelaySigningRejectedError` (headers from `signing.py` rejected) →

@@ -4,6 +4,13 @@
     "step": {
       "user": {
         "title": "Mondial Relay instellen",
+        "description": "Kies het land waar je Mondial Relay-account geregistreerd is. Dat bepaalt welke inlogpagina je krijgt en welk telefoonnummer die accepteert.",
+        "data": {
+          "country": "Land"
+        }
+      },
+      "sign_in": {
+        "title": "Inloggen bij Mondial Relay",
         "description": "Open dit adres in een browser en meld je aan met je Mondial Relay (InPost Group)-account:\n\n{authorize_url}\n\nDe pagina laadt daarna niet verder — dat is normaal. Kopieer de volledige URL uit de adresbalk van je browser en plak die hieronder.",
         "data": {
           "callback_url": "Callback-URL"
@@ -62,6 +69,15 @@
       "options": {
         "days": "Dagen",
         "parcels": "Aantal pakketten"
+      }
+    },
+    "country": {
+      "options": {
+        "fr": "Frankrijk",
+        "be": "België",
+        "nl": "Nederland",
+        "es": "Spanje",
+        "pt": "Portugal"
       }
     }
   },

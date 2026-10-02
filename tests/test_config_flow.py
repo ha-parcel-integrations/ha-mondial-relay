@@ -13,10 +13,12 @@ from custom_components.mondial_relay.api import (
 )
 from custom_components.mondial_relay.const import (
     CONF_ACCOUNT_SUBJECT,
+    CONF_COUNTRY,
     CONF_DELIVERED_FILTER_AMOUNT,
     CONF_DELIVERED_FILTER_TYPE,
     CONF_DEVICE_UID,
     CONF_INCLUDE_HISTORY,
+    CONF_MARKET,
     CONF_REFRESH_TOKEN,
     DOMAIN,
 )
@@ -43,6 +45,16 @@ def _fake_oauth(*, exchange_side_effect=None) -> MagicMock:
     session.refresh_token = "refresh-token-1"
     session.id_token = "header.payload.sig"
     return session
+
+
+async def _start(hass, country: str = "fr"):
+    """Init the flow and answer the country step, landing on ``sign_in``."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_COUNTRY: country}
+    )
 
 
 def _fake_client(*, validate_side_effect=None) -> MagicMock:
@@ -74,13 +86,23 @@ def _entry(subject: str = "subject-1") -> MockConfigEntry:
 # ---------------------------------------------------------------------------
 
 
-async def test_user_flow_shows_authorize_url(hass):
-    with patch(OAUTH_CLASS, return_value=_fake_oauth()):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+async def test_user_flow_asks_for_the_country_first(hass):
+    """The sign-in link cannot be built before the market is known."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
     assert result["step_id"] == "user"
+
+
+async def test_user_flow_shows_authorize_url(hass):
+    oauth = _fake_oauth()
+    with patch(OAUTH_CLASS, return_value=oauth):
+        result = await _start(hass, country="be")
+    assert result["step_id"] == "sign_in"
     assert AUTHORIZE_URL in result["description_placeholders"]["authorize_url"]
+    # The chosen market reaches the URL builder — without it the identity
+    # provider serves the Polish-only InPost sign-up.
+    assert oauth.build_authorization_url.call_args.kwargs["market"] == "BE"
 
 
 async def test_user_flow_creates_entry(hass):
@@ -89,9 +111,7 @@ async def test_user_flow_creates_entry(hass):
         patch(CLIENT_CLASS, return_value=_fake_client()),
         patch(SUBJECT_FN, return_value="subject-1"),
     ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+        result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
@@ -101,12 +121,11 @@ async def test_user_flow_creates_entry(hass):
     assert result["data"][CONF_REFRESH_TOKEN] == "refresh-token-1"
     assert result["data"][CONF_ACCOUNT_SUBJECT] == "subject-1"
     assert result["data"][CONF_DEVICE_UID]
+    assert result["data"][CONF_MARKET] == "FR"
 
 
 async def test_user_flow_rejects_wrong_state(hass):
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await _start(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"callback_url": WRONG_STATE_CALLBACK}
     )
@@ -114,9 +133,7 @@ async def test_user_flow_rejects_wrong_state(hass):
 
 
 async def test_user_flow_rejects_missing_code(hass):
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await _start(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"callback_url": NO_CODE_CALLBACK}
     )
@@ -124,9 +141,7 @@ async def test_user_flow_rejects_missing_code(hass):
 
 
 async def test_user_flow_rejects_wrong_host(hass):
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await _start(hass)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"callback_url": WRONG_HOST_CALLBACK}
     )
@@ -140,9 +155,7 @@ async def test_user_flow_surfaces_exchange_auth_error(hass):
             exchange_side_effect=MondialRelayOAuthAuthError("rejected")
         ),
     ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+        result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
@@ -154,9 +167,7 @@ async def test_user_flow_surfaces_exchange_connection_error(hass):
         OAUTH_CLASS,
         return_value=_fake_oauth(exchange_side_effect=aiohttp.ClientError("boom")),
     ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+        result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
@@ -177,9 +188,7 @@ async def test_user_flow_surfaces_validation_errors(hass, validate_error, expect
         patch(OAUTH_CLASS, return_value=_fake_oauth()),
         patch(CLIENT_CLASS, return_value=_fake_client(validate_side_effect=validate_error)),
     ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+        result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
@@ -194,9 +203,7 @@ async def test_user_flow_aborts_on_duplicate_account(hass):
         patch(CLIENT_CLASS, return_value=_fake_client()),
         patch(SUBJECT_FN, return_value="subject-1"),
     ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
+        result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )

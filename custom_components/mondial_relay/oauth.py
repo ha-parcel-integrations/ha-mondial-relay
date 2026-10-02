@@ -25,7 +25,9 @@ from urllib.parse import parse_qs, quote, urlparse
 import aiohttp
 
 from .const import (
+    DEFAULT_ACCOUNT_MARKET,
     MR_OAUTH_AUTHORIZE_URL,
+    MR_OAUTH_BRAND,
     MR_OAUTH_CLIENT_ID,
     MR_OAUTH_REDIRECT_URI,
     MR_OAUTH_SCOPE,
@@ -41,6 +43,19 @@ _REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
 
 # Used only when a token response carries no expires_in at all.
 _FALLBACK_TOKEN_LIFETIME = timedelta(minutes=15)
+
+# The sign-in page's own translations, per market. Belgium is bilingual, so
+# Home Assistant's language picks the side; Spain and Portugal have no
+# translation and render the French copy, but the tag's region still decides
+# which dial code the phone step starts on, so send the region-correct one
+# rather than a bare language.
+_MARKET_LANGUAGES = {
+    "FR": ("fr-FR",),
+    "BE": ("fr-BE", "nl-BE"),
+    "NL": ("nl-NL",),
+    "ES": ("es-ES",),
+    "PT": ("pt-PT",),
+}
 
 
 class MondialRelayOAuthError(Exception):
@@ -81,6 +96,16 @@ def generate_state() -> str:
 def generate_nonce() -> str:
     """Return a fresh random ``nonce`` value for one authorization request."""
     return secrets.token_urlsafe(24)
+
+
+def sign_in_language(language: str | None, market: str) -> str:
+    """Pick the sign-in page's language tag for one market."""
+    choices = _MARKET_LANGUAGES.get(market) or _MARKET_LANGUAGES[DEFAULT_ACCOUNT_MARKET]
+    spoken = (language or "").lower()[:2]
+    for choice in choices:
+        if spoken and choice.startswith(spoken):
+            return choice
+    return choices[0]
 
 
 def parse_callback_url(value: str) -> tuple[str | None, str | None]:
@@ -173,13 +198,20 @@ class MondialRelayOAuthSession:
         self._refresh_token_changed = False
         return value
 
-    def build_authorization_url(self) -> tuple[str, str, str]:
-        """Build the one-time browser authorization URL.
+    def build_authorization_url(
+        self, *, language: str | None = None, market: str = DEFAULT_ACCOUNT_MARKET
+    ) -> tuple[str, str, str]:
+        """Build the one-time browser authorization URL for one market.
 
         Returns ``(url, code_verifier, state)`` — the caller (config_flow.py)
         holds ``code_verifier`` and ``state`` for the lifetime of this one
         flow and passes ``code_verifier`` back into
         :meth:`async_exchange_code`.
+
+        ``brand``, ``lang`` and ``supported_markets`` are not cosmetic: drop
+        them and the identity provider serves the generic InPost sign-up
+        instead of Mondial Relay's, whose phone step accepts Polish numbers
+        only, which locks out every market this carrier actually delivers in.
         """
         code_verifier, code_challenge = generate_pkce()
         state = generate_state()
@@ -193,6 +225,10 @@ class MondialRelayOAuthSession:
             "code_challenge_method": "S256",
             "state": state,
             "nonce": nonce,
+            "response_mode": "query",
+            "brand": MR_OAUTH_BRAND,
+            "lang": sign_in_language(language, market),
+            "supported_markets": market,
         }
         query = "&".join(f"{key}={quote(value, safe='')}" for key, value in params.items())
         return f"{MR_OAUTH_AUTHORIZE_URL}?{query}", code_verifier, state
@@ -311,4 +347,5 @@ __all__ = [
     "generate_state",
     "is_valid_callback_url",
     "parse_callback_url",
+    "sign_in_language",
 ]

@@ -4,6 +4,13 @@
     "step": {
       "user": {
         "title": "Set up Mondial Relay",
+        "description": "Choose the country your Mondial Relay account is registered in. It decides which sign-in page you get, and the phone number it accepts.",
+        "data": {
+          "country": "Country"
+        }
+      },
+      "sign_in": {
+        "title": "Sign in to Mondial Relay",
         "description": "Open this address in a browser and sign in with your Mondial Relay (InPost Group) account:\n\n{authorize_url}\n\nThe page will not finish loading afterwards — that is expected. Copy the full address from your browser's address bar and paste it below.",
         "data": {
           "callback_url": "Callback URL"
@@ -62,6 +69,15 @@
       "options": {
         "days": "Days",
         "parcels": "Number of parcels"
+      }
+    },
+    "country": {
+      "options": {
+        "fr": "France",
+        "be": "Belgium",
+        "nl": "Netherlands",
+        "es": "Spain",
+        "pt": "Portugal"
       }
     }
   },

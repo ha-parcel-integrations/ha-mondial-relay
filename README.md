@@ -66,10 +66,11 @@ Copy `custom_components/mondial_relay` into your `config/custom_components/` fol
 
 ## Configuration
 
-Add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in two steps:
+Add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in three steps:
 
-1. Open the address the setup screen shows you in a browser and sign in with your Mondial Relay / InPost Group account. The page will not finish loading afterwards — that is expected.
-2. Copy the full address from your browser's address bar and paste it back into the setup form.
+1. Pick the country your Mondial Relay account is registered in — France, Belgium, the Netherlands, Spain or Portugal. It decides which sign-in page you are sent to, and which phone number that page accepts.
+2. Open the address the setup screen shows you in a browser and sign in with your Mondial Relay / InPost Group account. The page will not finish loading afterwards — that is expected.
+3. Copy the full address from your browser's address bar and paste it back into the setup form.
 
 Your password is never entered into Home Assistant; only Mondial Relay's own sign-in page sees it. Home Assistant stores the resulting sign-in token only.
 
@@ -172,7 +173,8 @@ logger:
 
 - **Every parcel shows `unknown`** — expected pre-1.0; see the note at the top of this README. The carrier's own progress value is still visible as `raw_status` on the parcel sensor.
 - **"Mondial Relay rejected this integration's request" in the log** — this is not a problem with your account, and signing in again will not fix it. Check for an integration update, and if none is available, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new).
-- **A reauth prompt appears** — your Mondial Relay sign-in has expired or was revoked; repeat the browser sign-in step from [Configuration](#configuration).
+- **A reauth prompt appears** — your Mondial Relay sign-in has expired or was revoked; repeat the browser sign-in step from [Configuration](#configuration). It reuses the country the entry was set up with.
+- **The sign-in page asks for a Polish phone number** — the country was set up as a market whose sign-in page you do not have an account on. Remove the entry and add it again with the right country.
 
 ## Related integrations
 

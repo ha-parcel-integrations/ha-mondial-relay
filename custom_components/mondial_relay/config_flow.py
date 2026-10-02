@@ -35,12 +35,16 @@ from .api import (
     MondialRelaySigningRejectedError,
 )
 from .const import (
+    ACCOUNT_MARKETS,
     CONF_ACCOUNT_SUBJECT,
+    CONF_COUNTRY,
     CONF_DELIVERED_FILTER_AMOUNT,
     CONF_DELIVERED_FILTER_TYPE,
     CONF_DEVICE_UID,
     CONF_INCLUDE_HISTORY,
+    CONF_MARKET,
     CONF_REFRESH_TOKEN,
+    DEFAULT_ACCOUNT_MARKET,
     DEFAULT_DELIVERED_FILTER_AMOUNT,
     DEFAULT_DELIVERED_FILTER_TYPE,
     DEFAULT_INCLUDE_HISTORY,
@@ -58,6 +62,16 @@ from .oauth import (
 _LOGGER = logging.getLogger(__name__)
 
 _CALLBACK_SCHEMA = vol.Schema({vol.Required("callback_url"): str})
+_MARKET_SELECTOR = selector.SelectSelector(
+    selector.SelectSelectorConfig(
+        options=[market.lower() for market in ACCOUNT_MARKETS],
+        translation_key=CONF_COUNTRY,
+        mode=selector.SelectSelectorMode.DROPDOWN,
+        # By the translated country name, so the order is alphabetical in
+        # every language.
+        sort=True,
+    )
+)
 
 
 class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -72,6 +86,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         self._code_verifier: str | None = None
         self._state: str | None = None
         self._device_uid: str | None = None
+        self._market: str = DEFAULT_ACCOUNT_MARKET
 
     @staticmethod
     @callback
@@ -99,7 +114,9 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
             self._authorize_url,
             self._code_verifier,
             self._state,
-        ) = self._get_oauth().build_authorization_url()
+        ) = self._get_oauth().build_authorization_url(
+            language=self.hass.config.language, market=self._market
+        )
 
     async def _async_exchange_and_validate(self, callback_url: str) -> str | None:
         """Parse, exchange and validate a pasted callback URL.
@@ -144,6 +161,29 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        """Ask which country the account is registered in.
+
+        It has to be known before the link is built: the sign-in page is
+        brand- and market-scoped, and the generic page it falls back to
+        cannot sign in a non-Polish account at all.
+        """
+        if user_input is not None:
+            self._market = user_input[CONF_COUNTRY].upper()
+            return await self.async_step_sign_in()
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_COUNTRY, default=DEFAULT_ACCOUNT_MARKET.lower()
+                    ): _MARKET_SELECTOR
+                }
+            ),
+        )
+
+    async def async_step_sign_in(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Show the authorization URL and the paste-back form."""
         self._ensure_authorize_url()
         errors: dict[str, str] = {}
@@ -163,6 +203,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_REFRESH_TOKEN: oauth.refresh_token,
                         CONF_ACCOUNT_SUBJECT: subject,
                         CONF_DEVICE_UID: self._device_uid,
+                        CONF_MARKET: self._market,
                     },
                     options={
                         CONF_DELIVERED_FILTER_TYPE: DEFAULT_DELIVERED_FILTER_TYPE,
@@ -172,7 +213,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_show_form(
-            step_id="user",
+            step_id="sign_in",
             data_schema=_CALLBACK_SCHEMA,
             errors=errors,
             description_placeholders={"authorize_url": self._authorize_url or ""},
@@ -188,6 +229,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         from the same device.
         """
         self._device_uid = entry_data.get(CONF_DEVICE_UID)
+        self._market = entry_data.get(CONF_MARKET, DEFAULT_ACCOUNT_MARKET)
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
@@ -213,6 +255,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
                     data_updates={
                         CONF_REFRESH_TOKEN: oauth.refresh_token,
                         CONF_ACCOUNT_SUBJECT: subject,
+                        CONF_MARKET: self._market,
                     },
                 )
 

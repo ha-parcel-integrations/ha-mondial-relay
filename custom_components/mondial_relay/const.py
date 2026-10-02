@@ -47,6 +47,11 @@ MR_OAUTH_TOKEN_URL = "https://account.inpost-group.com/oauth2/token"
 MR_OAUTH_CLIENT_ID = "mondialrelay-mobile"
 MR_OAUTH_REDIRECT_URI = "https://account.inpost-group.com/callback"
 MR_OAUTH_SCOPE = "openid"
+# The sign-in page is brand- and market-scoped, and both have to be asked for.
+# Without ``brand`` it serves the generic InPost sign-up whose phone step is
+# locked to +48 and offers no other dial code, so a French, Belgian, Dutch,
+# Spanish or Portuguese account cannot be created or signed in to at all.
+MR_OAUTH_BRAND = "mr"
 
 # The mobile account backend. Each request additionally carries a derived
 # request-signing header (see signing.py) alongside the bearer token; a
@@ -65,6 +70,16 @@ USER_AGENT = "okhttp/4.12.0"
 CONF_REFRESH_TOKEN = "refresh_token"
 CONF_ACCOUNT_SUBJECT = "account_subject"
 CONF_DEVICE_UID = "device_uid"
+# The market the account is registered in. It steers the sign-in page only —
+# the account backend is the same for every market — and entries from before
+# the choice existed have no value and are treated as French.
+CONF_MARKET = "market"
+CONF_COUNTRY = "country"
+# Live-confirmed against the sign-in page (2026-10-02): these five are
+# accepted, anything else is rejected with HTTP 400 before the user ever sees
+# a login form, so never widen this by guessing.
+ACCOUNT_MARKETS = ("FR", "BE", "NL", "ES", "PT")
+DEFAULT_ACCOUNT_MARKET = "FR"
 
 # Delivered-parcels retention: keep delivered parcels visible for the last N
 # days, or keep only the N most recent — identical across the suite.
