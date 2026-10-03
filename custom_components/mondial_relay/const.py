@@ -41,6 +41,10 @@ KNOWN_CAPABILITIES = frozenset(
 # against a real, consented account fixture.
 CAPABILITIES: frozenset[str] = frozenset()
 
+# Fields not confirmed yet — the docs site shows them as "awaiting data".
+# Move a field into the declaration above once a real parcel shows it.
+PENDING_CAPABILITIES = frozenset({"pickup_point", "history"})
+
 # InPost Group public OAuth/PKCE client the official app authenticates with.
 MR_OAUTH_AUTHORIZE_URL = "https://account.inpost-group.com/oauth2/authorize"
 MR_OAUTH_TOKEN_URL = "https://account.inpost-group.com/oauth2/token"
