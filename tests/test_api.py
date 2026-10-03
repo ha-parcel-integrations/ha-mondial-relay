@@ -10,6 +10,8 @@ from custom_components.mondial_relay.api import (
     MondialRelayApiError,
     MondialRelayAuthError,
     MondialRelaySigningRejectedError,
+    account_type,
+    has_confirmed_phone,
 )
 from custom_components.mondial_relay.const import USER_AGENT
 from custom_components.mondial_relay.oauth import MondialRelayOAuthError
@@ -17,6 +19,12 @@ from custom_components.mondial_relay.oauth import MondialRelayOAuthError
 from .payloads import active_item, list_envelope
 
 DEVICE_UID = "device-abc"
+USER_INFO = {
+    "guid": "g-1",
+    "ucPersonId": "p-1",
+    "userType": "PARTICULAR",
+    "phone": {"number": "+32…", "valid": True},
+}
 
 
 def _response(status: int, body: object = None, headers: dict | None = None) -> MagicMock:
@@ -193,7 +201,44 @@ async def test_get_list_shipped_returns_list():
     assert len(items) == 1
 
 
-async def test_validate_is_a_single_bounded_call():
+async def test_validate_parcel_access_is_a_single_bounded_call():
     session = _session_returning(_response(200, list_envelope([], page_index=0, total_pages=5)))
-    await _client(session).async_validate()
+    await _client(session).async_validate_parcel_access()
     assert session.get.call_count == 1
+
+
+async def test_get_user_info_returns_the_record():
+    session = _session_returning(_response(200, USER_INFO))
+    info = await _client(session).async_get_user_info()
+    assert info["userType"] == "PARTICULAR"
+
+
+async def test_get_user_info_rejects_a_non_object_body():
+    session = _session_returning(_response(200, ["not", "an", "object"]))
+    with pytest.raises(MondialRelayApiError):
+        await _client(session).async_get_user_info()
+
+
+async def test_get_user_info_maps_401_to_auth_error():
+    session = _session_returning(_response(401), _response(401))
+    with pytest.raises(MondialRelayAuthError):
+        await _client(session).async_get_user_info()
+
+
+@pytest.mark.parametrize(
+    "phone,expected",
+    [
+        ({"number": "+32…", "valid": True}, True),
+        ({"number": "+32…", "valid": False}, False),
+        # An unexpected shape must never block a setup that would work.
+        ({"number": "+32…"}, True),
+        (None, True),
+    ],
+)
+def test_has_confirmed_phone(phone, expected):
+    assert has_confirmed_phone({"phone": phone} if phone else {}) is expected
+
+
+def test_account_type_reads_user_type():
+    assert account_type({"userType": "PRO"}) == "PRO"
+    assert account_type({}) is None

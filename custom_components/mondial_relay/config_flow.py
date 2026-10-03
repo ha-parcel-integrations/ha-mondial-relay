@@ -33,10 +33,13 @@ from .api import (
     MondialRelayApiError,
     MondialRelayAuthError,
     MondialRelaySigningRejectedError,
+    account_type,
+    has_confirmed_phone,
 )
 from .const import (
     ACCOUNT_MARKETS,
     CONF_ACCOUNT_SUBJECT,
+    CONF_ACCOUNT_TYPE,
     CONF_COUNTRY,
     CONF_DELIVERED_FILTER_AMOUNT,
     CONF_DELIVERED_FILTER_TYPE,
@@ -87,6 +90,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         self._state: str | None = None
         self._device_uid: str | None = None
         self._market: str = DEFAULT_ACCOUNT_MARKET
+        self._account_type: str | None = None
 
     @staticmethod
     @callback
@@ -151,8 +155,13 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         client = MondialRelayApiClient(
             oauth, async_get_clientsession(self.hass), device_uid=self._device_uid
         )
+
+        # Identity first, parcel feed second. Asked in this order because a
+        # token the backend refuses outright and a token it accepts while
+        # refusing the parcel feed need different things from the user, and
+        # one combined call cannot tell them apart.
         try:
-            await client.async_validate()
+            user_info = await client.async_get_user_info()
         except MondialRelayAuthError:
             _LOGGER.warning(
                 "Signing in succeeded, but the Mondial Relay account backend "
@@ -162,10 +171,39 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         except MondialRelaySigningRejectedError:
             # The user did everything right; this integration's own request
             # was rejected. Not something a different callback URL fixes.
-            _LOGGER.debug("Setup validation call was rejected with HTTP 403")
+            _LOGGER.debug("The user-infos call was rejected with HTTP 403")
             return "cannot_connect"
         except (MondialRelayApiError, aiohttp.ClientError, TimeoutError):
-            _LOGGER.debug("Setup validation call failed", exc_info=True)
+            _LOGGER.debug("The user-infos call failed", exc_info=True)
+            return "cannot_connect"
+
+        self._account_type = account_type(user_info)
+
+        try:
+            await client.async_validate_parcel_access()
+        except MondialRelayAuthError:
+            # An unconfirmed phone number explains this refusal, so it is
+            # reported here rather than as a gate of its own: that the
+            # backend actually requires a confirmed number is an inference,
+            # and blocking on it would turn a working account away.
+            if not has_confirmed_phone(user_info):
+                _LOGGER.warning(
+                    "The parcel list was refused with HTTP 401 and this "
+                    "account's phone number is not confirmed, which Mondial "
+                    "Relay's own app asks for before the account can be used"
+                )
+                return "phone_not_confirmed"
+            _LOGGER.warning(
+                "The account itself is valid (user-infos returned a record) "
+                "and its phone number is confirmed, but its parcel list was "
+                "refused with HTTP 401"
+            )
+            return "parcels_unavailable"
+        except MondialRelaySigningRejectedError:
+            _LOGGER.debug("The parcel-list call was rejected with HTTP 403")
+            return "cannot_connect"
+        except (MondialRelayApiError, aiohttp.ClientError, TimeoutError):
+            _LOGGER.debug("The parcel-list call failed", exc_info=True)
             return "cannot_connect"
         return None
 
@@ -218,6 +256,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_ACCOUNT_SUBJECT: subject,
                         CONF_DEVICE_UID: self._device_uid,
                         CONF_MARKET: self._market,
+                        CONF_ACCOUNT_TYPE: self._account_type,
                     },
                     options={
                         CONF_DELIVERED_FILTER_TYPE: DEFAULT_DELIVERED_FILTER_TYPE,
@@ -270,6 +309,7 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_REFRESH_TOKEN: oauth.refresh_token,
                         CONF_ACCOUNT_SUBJECT: subject,
                         CONF_MARKET: self._market,
+                        CONF_ACCOUNT_TYPE: self._account_type,
                     },
                 )
 

@@ -26,7 +26,9 @@
     },
     "error": {
       "invalid_auth": "Mondial Relay heeft die aanmelding geweigerd. Het adres dat een aanmelding oplevert is eenmalig en verloopt snel \u2014 open de link hierboven opnieuw en plak het nieuwe adres.",
-      "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay accepteerde het account niet. Heb je dit account nog niet in de Mondial Relay-app gebruikt? Open de app dan één keer, rond de installatie af en probeer het daarna opnieuw.",
+      "phone_not_confirmed": "Mondial Relay gaf de pakketlijst van dit account niet vrij, en het telefoonnummer is niet bevestigd \u2014 wat de meest waarschijnlijke oorzaak is. Meld je met dit account aan in de Mondial Relay-app of op de website, bevestig je telefoonnummer en probeer het daarna opnieuw.",
+      "parcels_unavailable": "Het account is geldig, maar Mondial Relay gaf de pakketlijst niet vrij. Een ander adres plakken helpt hier niet \u2014 meld dit met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
+      "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay weigerde de sessie die hij net zelf had uitgegeven. Probeer één keer de aanmeldlink opnieuw te openen en een vers adres te plakken; blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
       "invalid_redirect": "Dat lijkt niet op het adres waar de aanmeldpagina je naartoe stuurde. Zorg dat je de hele URL na het aanmelden hebt gekopieerd.",
       "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw."
     },
@@ -116,7 +118,7 @@
         "unit_of_measurement": "pakketten"
       },
       "awaiting_pickup": {
-        "name": "Klaar om op te halen",
+        "name": "Klaar voor afhalen",
         "unit_of_measurement": "pakketten"
       },
       "delivered_parcels": {
@@ -124,11 +126,11 @@
         "unit_of_measurement": "pakketten"
       },
       "outgoing_parcels": {
-        "name": "Verzonden pakketten",
+        "name": "Uitgaande pakketten",
         "unit_of_measurement": "pakketten"
       },
       "outgoing_delivered_parcels": {
-        "name": "Verzonden pakketten bezorgd",
+        "name": "Uitgaande bezorgde pakketten",
         "unit_of_measurement": "pakketten"
       },
       "last_update": {

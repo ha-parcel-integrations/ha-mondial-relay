@@ -79,14 +79,23 @@ is `MondialRelaySigningRejectedError` (headers from `signing.py` rejected) →
 abort the poll, keep last-good data, log one WARNING, never reauth or fall
 back; only an integration update fixes it.
 
-**Setup has two refusals too, and they must stay separate.** A rejected code
-exchange (the identity provider's own `400`/`401`, carried on
-`MondialRelayOAuthError.error_code`) is `invalid_auth` — almost always a
-reused or expired authorization code, which a fresh sign-in fixes. A `401`
-from the account backend with tokens the provider just issued is
-`account_rejected`: the sign-in worked and no other pasted URL will help, so
-never show it as a rejected sign-in. Both log one WARNING naming which side
-refused — without that a bug report cannot tell them apart (#4).
+**Setup has four refusals, and they must stay separate.** Merging any of
+them back together is what made #4 undiagnosable, so each logs one WARNING
+naming the side that refused:
+
+| Where it failed | Error | What it means |
+|---|---|---|
+| Code exchange, IdP's own `400`/`401` (on `MondialRelayOAuthError.error_code`) | `invalid_auth` | Almost always a reused or expired authorization code; a fresh sign-in fixes it. |
+| `user-infos` `401` | `account_rejected` | The backend refused the session it had just issued. The sign-in worked, so no other pasted URL helps. |
+| `parcels-list-received` `401` **and** `user-infos` said `phone.valid is False` | `phone_not_confirmed` | The likeliest explanation for that refusal, and one the user can act on. |
+| `parcels-list-received` `401` with a confirmed number | `parcels_unavailable` | Identity is fine, the parcel feed alone refused. Nothing the user can fix. |
+
+**`phone.valid` explains a refusal; it never gates setup.** That the backend
+*requires* a confirmed number is an inference from the app's
+`PhoneConfirmation_*` screens, not something observed on the wire — so an
+unconfirmed number on an account whose parcel list loads fine must still set
+up successfully. Only an explicit `false` counts as unconfirmed; a missing or
+reshaped `phone` object warns once (`api.has_confirmed_phone`) and passes.
 
 **Pre-1.0: `status` is always `unknown`, `raw_status` is `str(stepSection)`.**
 `expedition.stepSection` is a plain integer with no confirmed vocabulary (a
@@ -120,10 +129,28 @@ in both), with one value-free WARNING per session
 direction for an overlapping shipment — the server's own split is the source
 of truth, not a heuristic here.
 
-**`parcels-detail`/`parcels-search` are not called.** Only the two list
-endpoints are implemented; both `parcelType`/the detail envelope and the
-search endpoint's behaviour are unconfirmed and out of scope until the
-release fixture gate above is cleared.
+**Four of the BFF's seven routes are deliberately not called.** The app's own
+Retrofit interface has `parcels-list-received`, `parcels-list-shipped`,
+`parcels-detail`, `parcels-search`, `parcels-list-not-migrated`,
+`parcel-detail-not-migrated` and a `POST easy-access-zone`. We call the two
+lists plus `user-infos`. `parcels-detail`'s `parcelType` is confirmed as
+`"shipped"`/`"received"` (from the app), but its response envelope is not, and
+`parcels-search` is still unprobed — both out of scope until the release
+fixture gate above is cleared. The **`*-not-migrated` pair is a decision, not
+a gap**: that list only holds a shipment the user created minutes ago (the
+app's own copy is *"Le colis est en cours de création. Veuillez patienter
+quelques minutes."*), so on a 15–45 minute poll it would buy a sensor that
+appears and vanishes again, at the cost of an extra call every cycle. Revisit
+only if a user actually reports a just-created parcel missing.
+
+**The whole auth model sits behind a Firebase Remote Config flag.**
+`feature_loginPost_enabled` is what makes the app use the InPost Group
+OAuth/PKCE route we reproduce; with it off, `TokenReauthenticator` falls back
+to an older login that we do not implement at all. Mondial Relay can flip
+that server-side without shipping an app update, and if they do, this
+integration's sign-in breaks with nothing changed on our side. Nothing to
+build for it — just do not spend hours hunting a local cause if every
+account suddenly fails to authenticate at once.
 
 **Entry title is the literal string `"Mondial Relay"` for every account** —
 not per-account, unlike most other multi-account carriers in this suite.
@@ -132,11 +159,24 @@ Two configured accounts are told apart by the **device** name instead
 the config entry title. Don't "fix" this to look like DHL's per-account
 title — it is the setup contract this integration was built to.
 
-**Setup validates with one bounded `parcels-list-received` call**
-(`api.py::async_validate`, page 0 only) — never the full paginated fetch.
-`unique_id` is the OAuth ID token's `sub` claim
-(`oauth.decode_id_token_subject`); there is no documented user-info endpoint
-to prefer over it yet.
+**Setup validates in two steps, identity before parcels.**
+`api.py::async_get_user_info` (`user-infos`) first, then
+`async_validate_parcel_access` (`parcels-list-received`, page 0 only, never
+the full paginated fetch). The order is the whole point: it is what splits
+`account_rejected` from `parcels_unavailable` in the table above. `user-infos`
+is the first call the official app makes after a login, so it is not an extra
+burden on the backend. It is a setup-only call — the coordinator never makes
+it, because nothing in a poll needs it.
+
+**`unique_id` stays the OAuth ID token's `sub` claim**
+(`oauth.decode_id_token_subject`) even though `user-infos` now gives us
+`guid` and `ucPersonId` as well. Switching would mean a network-dependent
+migration of every existing entry, and running two schemes side by side would
+let the same account be added twice without being deduplicated — all for an
+identifier that is no more stable than the one we have. The record's
+`userType` *is* stored, as `CONF_ACCOUNT_TYPE`, purely so a bug report says
+whether it came from a business (`PRO`) account; nothing branches on it and
+diagnostics deliberately do not redact it.
 
 ## Options and reloads
 

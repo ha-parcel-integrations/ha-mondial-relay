@@ -14,6 +14,7 @@ from custom_components.mondial_relay.api import (
 from custom_components.mondial_relay.config_flow import MondialRelayConfigFlow
 from custom_components.mondial_relay.const import (
     CONF_ACCOUNT_SUBJECT,
+    CONF_ACCOUNT_TYPE,
     CONF_COUNTRY,
     CONF_DELIVERED_FILTER_AMOUNT,
     CONF_DELIVERED_FILTER_TYPE,
@@ -58,9 +59,18 @@ async def _start(hass, country: str = "fr"):
     )
 
 
-def _fake_client(*, validate_side_effect=None) -> MagicMock:
+USER_INFO = {"guid": "g-1", "userType": "PARTICULAR", "phone": {"valid": True}}
+
+
+def _fake_client(
+    *, validate_side_effect=None, user_info_side_effect=None, user_info=None
+) -> MagicMock:
     client = MagicMock()
-    client.async_validate = AsyncMock(side_effect=validate_side_effect)
+    client.async_get_user_info = AsyncMock(
+        return_value=user_info if user_info is not None else USER_INFO,
+        side_effect=user_info_side_effect,
+    )
+    client.async_validate_parcel_access = AsyncMock(side_effect=validate_side_effect)
     return client
 
 
@@ -176,17 +186,43 @@ async def test_user_flow_surfaces_exchange_connection_error(hass):
 
 
 @pytest.mark.parametrize(
-    "validate_error,expected",
+    "user_info_error,expected",
     [
-        # Not invalid_auth: the sign-in itself worked, so a different
-        # callback URL cannot fix it.
+        # The backend refused the session it had just issued. Not
+        # invalid_auth: the sign-in itself worked.
         (MondialRelayAuthError("HTTP 401"), "account_rejected"),
         (MondialRelaySigningRejectedError("HTTP 403"), "cannot_connect"),
         (MondialRelayApiError("HTTP 500"), "cannot_connect"),
         (aiohttp.ClientError("boom"), "cannot_connect"),
     ],
 )
-async def test_user_flow_surfaces_validation_errors(hass, validate_error, expected):
+async def test_user_flow_surfaces_user_info_errors(hass, user_info_error, expected):
+    with (
+        patch(OAUTH_CLASS, return_value=_fake_oauth()),
+        patch(
+            CLIENT_CLASS,
+            return_value=_fake_client(user_info_side_effect=user_info_error),
+        ),
+    ):
+        result = await _start(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"callback_url": VALID_CALLBACK}
+        )
+    assert result["errors"] == {"base": expected}
+
+
+@pytest.mark.parametrize(
+    "validate_error,expected",
+    [
+        # Distinct from account_rejected: user-infos handed over a record, so
+        # the account is fine and only its parcel feed refused.
+        (MondialRelayAuthError("HTTP 401"), "parcels_unavailable"),
+        (MondialRelaySigningRejectedError("HTTP 403"), "cannot_connect"),
+        (MondialRelayApiError("HTTP 500"), "cannot_connect"),
+        (aiohttp.ClientError("boom"), "cannot_connect"),
+    ],
+)
+async def test_user_flow_surfaces_parcel_access_errors(hass, validate_error, expected):
     with (
         patch(OAUTH_CLASS, return_value=_fake_oauth()),
         patch(CLIENT_CLASS, return_value=_fake_client(validate_side_effect=validate_error)),
@@ -196,6 +232,54 @@ async def test_user_flow_surfaces_validation_errors(hass, validate_error, expect
             result["flow_id"], {"callback_url": VALID_CALLBACK}
         )
     assert result["errors"] == {"base": expected}
+
+
+async def test_unconfirmed_phone_explains_a_refused_parcel_list(hass):
+    """The flag is the reason for a 401, reported instead of the generic one."""
+    client = _fake_client(
+        user_info={"phone": {"valid": False}},
+        validate_side_effect=MondialRelayAuthError("HTTP 401"),
+    )
+    with (
+        patch(OAUTH_CLASS, return_value=_fake_oauth()),
+        patch(CLIENT_CLASS, return_value=client),
+    ):
+        result = await _start(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"callback_url": VALID_CALLBACK}
+        )
+    assert result["errors"] == {"base": "phone_not_confirmed"}
+
+
+async def test_unconfirmed_phone_alone_does_not_block_setup(hass):
+    """Requiring a confirmed number is an inference, so it is never a gate."""
+    with (
+        patch(OAUTH_CLASS, return_value=_fake_oauth()),
+        patch(
+            CLIENT_CLASS,
+            return_value=_fake_client(user_info={"phone": {"valid": False}}),
+        ),
+        patch(SUBJECT_FN, return_value="subject-1"),
+    ):
+        result = await _start(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"callback_url": VALID_CALLBACK}
+        )
+    assert result["type"] == "create_entry"
+
+
+async def test_user_flow_stores_the_account_type(hass):
+    """Kept so a bug report says which kind of account it came from."""
+    with (
+        patch(OAUTH_CLASS, return_value=_fake_oauth()),
+        patch(CLIENT_CLASS, return_value=_fake_client(user_info={"userType": "PRO"})),
+        patch(SUBJECT_FN, return_value="subject-1"),
+    ):
+        result = await _start(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"callback_url": VALID_CALLBACK}
+        )
+    assert result["data"][CONF_ACCOUNT_TYPE] == "PRO"
 
 
 async def test_country_step_rebuilds_the_link_when_the_answer_changes(hass):

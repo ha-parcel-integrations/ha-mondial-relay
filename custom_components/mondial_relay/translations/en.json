@@ -26,7 +26,9 @@
     },
     "error": {
       "invalid_auth": "Mondial Relay rejected that sign-in. The address a sign-in produces can only be used once and expires quickly \u2014 open the link above again and paste the new address.",
-      "account_rejected": "Signing in worked, but Mondial Relay's account service would not accept the account. If you have not used this account in the Mondial Relay app yet, open the app once, finish its setup, and then try again.",
+      "phone_not_confirmed": "Mondial Relay would not hand over this account's parcel list, and its phone number has not been confirmed \u2014 which is the likeliest reason. Open the Mondial Relay app or website, sign in with this account and confirm your phone number, then try again.",
+      "parcels_unavailable": "The account is valid, but Mondial Relay would not hand over its parcel list. This is not something a different address will fix \u2014 please report it with the warning logged under custom_components.mondial_relay.",
+      "account_rejected": "Signing in worked, but Mondial Relay's account service refused the session it had just issued. Opening the sign-in link again and pasting a fresh address is worth one try; if it keeps happening, please report it with the warning logged under custom_components.mondial_relay.",
       "invalid_redirect": "That does not look like the address the sign-in page redirected you to. Make sure you copied the whole thing after signing in.",
       "cannot_connect": "Could not reach Mondial Relay. Please try again."
     },

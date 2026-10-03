@@ -60,6 +60,10 @@ MR_OAUTH_BRAND = "mr"
 MR_BFF_BASE_URL = "https://mobile-app-bff.mondialrelay.app/api"
 MR_LIST_RECEIVED_PATH = "parcels-list-received"
 MR_LIST_SHIPPED_PATH = "parcels-list-shipped"
+# The account's own record. Setup asks for it before any parcel list, because
+# it is the only call that separates a token the backend refuses outright from
+# a token it accepts while refusing the parcel feed.
+MR_USER_INFO_PATH = "user-infos"
 MR_PAGE_SIZE = 20
 MR_ACCEPT_LANGUAGE = "en"
 MR_ORIGIN_APP = "MR"
@@ -69,6 +73,10 @@ USER_AGENT = "okhttp/4.12.0"
 
 CONF_REFRESH_TOKEN = "refresh_token"
 CONF_ACCOUNT_SUBJECT = "account_subject"
+# ``userType`` from user-infos, e.g. a business ("PRO") rather than a private
+# account. Kept only so a bug report says which kind of account it came from;
+# nothing branches on it, and an unknown value is stored as-is.
+CONF_ACCOUNT_TYPE = "account_type"
 CONF_DEVICE_UID = "device_uid"
 # The market the account is registered in. It steers the sign-in page only —
 # the account backend is the same for every market — and entries from before
