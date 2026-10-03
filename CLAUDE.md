@@ -62,8 +62,7 @@ Drop any of them and `account.inpost-group.com` serves the *generic InPost*
 sign-up (`data-brand="inpost"`, Polish copy) instead of Mondial Relay's — and
 that page's phone step is locked to +48 with no other dial code on offer, so
 no French, Belgian, Dutch, Spanish or Portuguese account can be created or
-signed in to at all (#4). `brand=mr` is the switch: live-confirmed
-2026-10-02, `supported_markets=BE&lang=nl-BE` *without* `brand` still renders
+signed in to at all (#4). `brand=mr` is the switch: live-confirmed: `supported_markets=BE&lang=nl-BE` *without* `brand` still renders
 the Polish page. The market therefore has to be asked **before** the link is
 built — hence `CONF_MARKET` in `entry.data` and the country step ahead of the
 paste step, reused as-is on reauth. `ACCOUNT_MARKETS` is the live-confirmed
@@ -86,7 +85,7 @@ logged in at `mondialrelay.be` first, after which the same build worked. This
 provisioning is server-side, triggered by that first sign-in; there is no
 activation *call* this integration could make. It cannot be done from here, so it belongs in the instructions, and
 `ACCOUNT_WEBSITES` carries the per-market URL the `sign_in` step shows. That
-map is live-checked (2026-10-03): `ES`/`PT` serve InPost-branded sites, so
+map is live-checked: `ES`/`PT` serve InPost-branded sites, so
 `mondialrelay.es`/`.pt` would only bounce through a redirect. It is also why
 `account_rejected` and `parcels_unavailable` name this remedy first instead
 of sending the user straight to the issue tracker.
