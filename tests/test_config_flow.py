@@ -111,6 +111,11 @@ async def test_user_flow_shows_authorize_url(hass):
         result = await _start(hass, country="be")
     assert result["step_id"] == "sign_in"
     assert AUTHORIZE_URL in result["description_placeholders"]["authorize_url"]
+    # The prerequisite sign-in has to point at the chosen market's own site.
+    assert (
+        result["description_placeholders"]["website_url"]
+        == "https://www.mondialrelay.be"
+    )
     # The chosen market reaches the URL builder — without it the identity
     # provider serves the Polish-only InPost sign-up.
     assert oauth.build_authorization_url.call_args.kwargs["market"] == "BE"

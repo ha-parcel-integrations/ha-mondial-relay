@@ -11,7 +11,7 @@
       },
       "sign_in": {
         "title": "Inloggen bij Mondial Relay",
-        "description": "Open dit adres in een browser en meld je aan met je Mondial Relay (InPost Group)-account:\n\n{authorize_url}\n\nDe pagina laadt daarna niet verder — dat is normaal. Kopieer de volledige URL uit de adresbalk van je browser en plak die hieronder.",
+        "description": "**Doe dit eerst:** meld je één keer aan op {website_url} met het account dat je wilt gebruiken, en zorg dat je telefoonnummer daar bevestigd is. Mondial Relay geeft de pakketten van een account pas vrij als dat zich minstens één keer op hun eigen site of in hun app heeft aangemeld, en Home Assistant kan die stap niet voor je doen.\n\nOpen daarna dit adres in een browser en meld je aan met je Mondial Relay (InPost Group)-account:\n\n{authorize_url}\n\nDe pagina laadt daarna niet verder — dat is normaal. Kopieer het volledige adres uit de adresbalk van je browser en plak het hieronder.",
         "data": {
           "callback_url": "Callback-URL"
         }
@@ -25,10 +25,10 @@
       }
     },
     "error": {
-      "invalid_auth": "Mondial Relay heeft die aanmelding geweigerd. Het adres dat een aanmelding oplevert is eenmalig en verloopt snel \u2014 open de link hierboven opnieuw en plak het nieuwe adres.",
-      "phone_not_confirmed": "Mondial Relay gaf de pakketlijst van dit account niet vrij, en het telefoonnummer is niet bevestigd \u2014 wat de meest waarschijnlijke oorzaak is. Meld je met dit account aan in de Mondial Relay-app of op de website, bevestig je telefoonnummer en probeer het daarna opnieuw.",
-      "parcels_unavailable": "Het account is geldig, maar Mondial Relay gaf de pakketlijst niet vrij. Een ander adres plakken helpt hier niet \u2014 meld dit met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
-      "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay weigerde de sessie die hij net zelf had uitgegeven. Probeer één keer de aanmeldlink opnieuw te openen en een vers adres te plakken; blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
+      "invalid_auth": "Mondial Relay heeft die aanmelding geweigerd. Het adres dat een aanmelding oplevert is eenmalig en verloopt snel — open de link hierboven opnieuw en plak het nieuwe adres.",
+      "phone_not_confirmed": "Mondial Relay gaf de pakketlijst van dit account niet vrij, en het telefoonnummer is niet bevestigd — wat de meest waarschijnlijke oorzaak is. Meld je met dit account aan in de Mondial Relay-app of op de website, bevestig je telefoonnummer en probeer het daarna opnieuw.",
+      "parcels_unavailable": "Het account is geldig, maar Mondial Relay gaf de pakketlijst niet vrij. Meestal komt dat doordat het account zich nog nooit op de site of in de app van Mondial Relay heeft aangemeld — doe dat één keer en herhaal daarna het aanmelden hier. Blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
+      "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay weigerde de sessie die hij net zelf had uitgegeven. Meestal komt dat doordat het account zich nog nooit op de site of in de app van Mondial Relay heeft aangemeld — doe dat één keer en herhaal daarna het aanmelden hier. Blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
       "invalid_redirect": "Dat lijkt niet op het adres waar de aanmeldpagina je naartoe stuurde. Zorg dat je de hele URL na het aanmelden hebt gekopieerd.",
       "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw."
     },

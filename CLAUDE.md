@@ -79,6 +79,20 @@ is `MondialRelaySigningRejectedError` (headers from `signing.py` rejected) →
 abort the poll, keep last-good data, log one WARNING, never reauth or fall
 back; only an integration update fixes it.
 
+**An account must sign in on Mondial Relay's own site or app once before
+this integration can use it** — confirmed by the reporter in #4, who had
+completed the OAuth sign-in successfully and still got nothing until they
+logged in at `mondialrelay.be` first, after which the same build worked. This
+is the practical cause the APK teardown could not find: there is no
+activation *call* anywhere in the app's flow (see the route inventory below),
+so whatever provisioning happens is server-side, triggered by that first
+sign-in. It cannot be done from here, so it belongs in the instructions, and
+`ACCOUNT_WEBSITES` carries the per-market URL the `sign_in` step shows. That
+map is live-checked (2026-10-03): `ES`/`PT` serve InPost-branded sites, so
+`mondialrelay.es`/`.pt` would only bounce through a redirect. It is also why
+`account_rejected` and `parcels_unavailable` name this remedy first instead
+of sending the user straight to the issue tracker.
+
 **Setup has four refusals, and they must stay separate.** Merging any of
 them back together is what made #4 undiagnosable, so each logs one WARNING
 naming the side that refused:

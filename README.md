@@ -66,7 +66,9 @@ Copy `custom_components/mondial_relay` into your `config/custom_components/` fol
 
 ## Configuration
 
-Add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in three steps:
+**Before you start:** sign in once on Mondial Relay's own website (or in their app) with the account you want to use, and make sure your phone number is confirmed there — [mondialrelay.fr](https://www.mondialrelay.fr), [mondialrelay.be](https://www.mondialrelay.be), [mondialrelay.nl](https://www.mondialrelay.nl), [inpost.es](https://www.inpost.es) or [inpost.pt](https://www.inpost.pt). Mondial Relay does not release an account's parcels until it has signed in there at least once, and Home Assistant cannot do that step for you.
+
+Then add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in three steps:
 
 1. Pick the country your Mondial Relay account is registered in — France, Belgium, the Netherlands, Spain or Portugal. It decides which sign-in page you are sent to, and which phone number that page accepts.
 2. Open the address the setup screen shows you in a browser and sign in with your Mondial Relay / InPost Group account. The page will not finish loading afterwards — that is expected.
@@ -174,9 +176,8 @@ logger:
 - **Every parcel shows `unknown`** — expected pre-1.0; see the note at the top of this README. The carrier's own progress value is still visible as `raw_status` on the parcel sensor.
 - **"Mondial Relay rejected this integration's request" in the log** — this is not a problem with your account, and signing in again will not fix it. Check for an integration update, and if none is available, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new).
 - **"Mondial Relay rejected that sign-in"** — the address a sign-in produces can only be used once and expires within minutes. Open the sign-in link again, sign in again, and paste the fresh address straight away.
-- **"Mondial Relay's account service refused the session it had just issued"** — the sign-in itself worked, so pasting a different address will not help. Worth one retry with a fresh sign-in; if it keeps happening, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new) and include the warning logged under `custom_components.mondial_relay`.
+- **"Mondial Relay's account service refused the session it had just issued"** or **"would not release its parcel list"** — the sign-in itself worked, so pasting a different address will not help. Almost always an account that has never signed in on Mondial Relay's own site or app: do that once (see [Configuration](#configuration)), then repeat the sign-in here. If it persists, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new) with the warning logged under `custom_components.mondial_relay`.
 - **"This account's phone number has not been confirmed"** — Mondial Relay refused this account's parcel list, and an unconfirmed phone number is the likeliest reason. Sign in to the Mondial Relay app or website with this account, confirm your phone number, then repeat the sign-in here. An unconfirmed number on its own never blocks setup.
-- **"Mondial Relay would not hand over its parcel list"** — your account is valid and the sign-in worked; only the parcel feed refused. Nothing you can change fixes this, so please [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new) with the warning logged under `custom_components.mondial_relay`.
 - **A reauth prompt appears** — your Mondial Relay sign-in has expired or was revoked; repeat the browser sign-in step from [Configuration](#configuration). It reuses the country the entry was set up with.
 - **The sign-in page asks for a Polish phone number** — the country was set up as a market whose sign-in page you do not have an account on. Remove the entry and add it again with the right country.
 

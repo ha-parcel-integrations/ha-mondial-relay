@@ -38,6 +38,7 @@ from .api import (
 )
 from .const import (
     ACCOUNT_MARKETS,
+    ACCOUNT_WEBSITES,
     CONF_ACCOUNT_SUBJECT,
     CONF_ACCOUNT_TYPE,
     CONF_COUNTRY,
@@ -269,7 +270,12 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="sign_in",
             data_schema=_CALLBACK_SCHEMA,
             errors=errors,
-            description_placeholders={"authorize_url": self._authorize_url or ""},
+            description_placeholders={
+                "authorize_url": self._authorize_url or "",
+                "website_url": ACCOUNT_WEBSITES.get(
+                    self._market, ACCOUNT_WEBSITES[DEFAULT_ACCOUNT_MARKET]
+                ),
+            },
         )
 
     async def async_step_reauth(

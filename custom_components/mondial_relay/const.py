@@ -89,6 +89,18 @@ CONF_COUNTRY = "country"
 ACCOUNT_MARKETS = ("FR", "BE", "NL", "ES", "PT")
 DEFAULT_ACCOUNT_MARKET = "FR"
 
+# Where a user signs in to provision the account before setup can use it
+# (see CLAUDE.md's note on the first sign-in). Live-checked 2026-10-03: the
+# Spanish and Portuguese markets now serve InPost-branded sites, so a
+# mondialrelay.es/.pt link would only bounce the user through a redirect.
+ACCOUNT_WEBSITES = {
+    "FR": "https://www.mondialrelay.fr",
+    "BE": "https://www.mondialrelay.be",
+    "NL": "https://www.mondialrelay.nl",
+    "ES": "https://www.inpost.es",
+    "PT": "https://www.inpost.pt",
+}
+
 # Delivered-parcels retention: keep delivered parcels visible for the last N
 # days, or keep only the N most recent — identical across the suite.
 CONF_DELIVERED_FILTER_TYPE = "delivered_filter_type"
