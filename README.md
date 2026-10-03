@@ -7,7 +7,7 @@
 
 > 💬 Questions or feedback? Join the discussion on the [Home Assistant community](https://community.home-assistant.io/t/packages-postnl-dhl-nl-dpd-and-gls-parcel-integration/112433/).
 
-> **Pre-1.0 release.** Mondial Relay's account app reports each parcel's
+> ⚠️ **Pre-1.0 release.** Mondial Relay's account app reports each parcel's
 > progress as a plain integer with no published meaning, and this integration
 > has not yet had a real, consented sample confirming what each value stands
 > for. Until then every parcel reports `status: unknown` — the carrier's own
