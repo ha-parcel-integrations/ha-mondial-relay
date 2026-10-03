@@ -68,7 +68,7 @@ built — hence `CONF_MARKET` in `entry.data` and the country step ahead of the
 paste step, reused as-is on reauth. `ACCOUNT_MARKETS` is the live-confirmed
 set (`FR`/`BE`/`NL`/`ES`/`PT`); anything else is an HTTP 400 on the authorize
 call, so never widen it by guessing. `lang` carries a region because the
-page's own `resolveInitialPhonePrefix` falls back to the locale's region to
+page's own script falls back to the locale's region to
 preselect a dial code — which is also why `es-ES`/`pt-PT` are sent even
 though that page has no Spanish or Portuguese translation and renders French.
 
@@ -154,12 +154,10 @@ quelques minutes."*), so on a 15–45 minute poll it would buy a sensor that
 appears and vanishes again, at the cost of an extra call every cycle. Revisit
 only if a user actually reports a just-created parcel missing.
 
-**The whole auth model sits behind a Firebase Remote Config flag.**
-`feature_loginPost_enabled` is what makes the app use the InPost Group
-OAuth/PKCE route we reproduce; with it off, `TokenReauthenticator` falls back
-to an older login that we do not implement at all. Mondial Relay can flip
-that server-side without shipping an app update, and if they do, this
-integration's sign-in breaks with nothing changed on our side. Nothing to
+**The whole auth model can be switched server-side.** Mondial Relay can move
+sign-in between the InPost Group OAuth/PKCE route we use and an older login
+that we do not implement at all, without shipping an app update, and if they
+do, this integration's sign-in breaks with nothing changed on our side. Nothing to
 build for it — just do not spend hours hunting a local cause if every
 account suddenly fails to authenticate at once.
 
