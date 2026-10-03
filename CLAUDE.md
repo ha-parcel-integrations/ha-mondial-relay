@@ -83,10 +83,8 @@ back; only an integration update fixes it.
 this integration can use it** — confirmed by the reporter in #4, who had
 completed the OAuth sign-in successfully and still got nothing until they
 logged in at `mondialrelay.be` first, after which the same build worked. This
-is the practical cause the APK teardown could not find: there is no
-activation *call* anywhere in the app's flow (see the route inventory below),
-so whatever provisioning happens is server-side, triggered by that first
-sign-in. It cannot be done from here, so it belongs in the instructions, and
+provisioning is server-side, triggered by that first sign-in; there is no
+activation *call* this integration could make. It cannot be done from here, so it belongs in the instructions, and
 `ACCOUNT_WEBSITES` carries the per-market URL the `sign_in` step shows. That
 map is live-checked (2026-10-03): `ES`/`PT` serve InPost-branded sites, so
 `mondialrelay.es`/`.pt` would only bounce through a redirect. It is also why
