@@ -107,16 +107,39 @@ def test_capabilities_are_known_values():
 
 
 def test_capabilities_are_empty_pre_1_0():
-    """Nothing is fixture-confirmed yet — every optional field stays null."""
+    """No optional field is confirmed yet — every one stays null."""
     assert CAPABILITIES == frozenset()
 
 
-def test_normalize_status_is_always_unknown():
-    """No integer-to-status vocabulary is confirmed — never guess one."""
-    for step_section in (1, 3, 5, 99):
+def test_normalize_maps_step_section():
+    expected = {
+        1: ParcelStatus.AT_PICKUP_POINT,
+        2: ParcelStatus.IN_TRANSIT,
+        3: ParcelStatus.DELIVERED,
+        0: ParcelStatus.UNKNOWN,
+        4: ParcelStatus.UNKNOWN,
+        99: ParcelStatus.UNKNOWN,
+    }
+    for step_section, status in expected.items():
         parcel = normalize_parcel(list_item(step_section=step_section))
-        assert parcel["status"] == ParcelStatus.UNKNOWN
+        assert parcel["status"] == status
         assert parcel["raw_status"] == str(step_section)
+
+
+def test_normalize_mapped_step_section_does_not_warn(caplog, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.mondial_relay.parcels._unmapped_steps_logged", set()
+    )
+    for step_section in (1, 2, 3):
+        normalize_parcel(list_item(step_section=step_section))
+    assert "stepSection" not in caplog.text
+
+
+def test_normalize_has_problem_overrides_an_active_status():
+    for step_section in (1, 2, 99):
+        parcel = normalize_parcel(list_item(step_section=step_section, has_problem=True))
+        assert parcel["status"] == ParcelStatus.PROBLEM
+        assert parcel["delivered"] is False
 
 
 def test_normalize_warns_once_per_unmapped_step_section(caplog, monkeypatch):
@@ -136,14 +159,25 @@ def test_normalize_raw_status_none_without_a_step_section():
     assert normalize_parcel(raw)["raw_status"] is None
 
 
-def test_normalize_never_marks_delivered():
-    """Pre-1.0: no terminal signal is confirmed, so this must stay False."""
+def test_normalize_delivered_uses_the_tracing_date():
     parcel = normalize_parcel(delivered_item())
+    assert parcel["delivered"] is True
+    assert parcel["delivered_at"] == "2026-04-27T23:03:58Z"
+
+
+def test_normalize_delivered_with_a_problem_stays_delivered():
+    parcel = normalize_parcel(list_item(step_section=3, has_problem=True))
+    assert parcel["status"] == ParcelStatus.DELIVERED
+    assert parcel["delivered"] is True
+
+
+def test_normalize_active_parcel_has_no_delivered_at():
+    parcel = normalize_parcel(active_item())
     assert parcel["delivered"] is False
     assert parcel["delivered_at"] is None
 
 
-def test_normalize_null_fields_pre_1_0():
+def test_normalize_unconfirmed_fields_stay_null():
     parcel = normalize_parcel(active_item())
     assert parcel["planned_from"] is None
     assert parcel["planned_to"] is None

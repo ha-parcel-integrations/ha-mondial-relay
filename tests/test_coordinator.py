@@ -71,10 +71,9 @@ async def test_update_splits_incoming_and_outgoing(hass):
     data = await coordinator._async_update_data()
 
     assert [p["barcode"] for p in data] == [ACTIVE_CODE]
-    assert len(coordinator.outgoing) == 1
-    # Nothing is ever marked delivered pre-1.0.
+    assert coordinator.outgoing == []
     assert coordinator.delivered == []
-    assert coordinator.delivered_outgoing == []
+    assert [p["barcode"] for p in coordinator.delivered_outgoing] == [DELIVERED_CODE]
     assert coordinator.last_success_time is not None
 
 
@@ -195,7 +194,7 @@ async def test_signing_rejection_warns_only_once(hass, caplog):
 
 
 # ---------------------------------------------------------------------------
-# events — pre-1.0, status never changes, so only "registered" is reachable
+# events
 # ---------------------------------------------------------------------------
 
 
@@ -234,16 +233,35 @@ async def test_fires_registered_event_for_new_parcel(hass):
     await coordinator._async_update_data()  # first refresh: suppressed
     client.async_get_list_received.return_value = [
         active_item(),
-        delivered_item(),
+        active_item(shipment_uid="shp-new-0001", shipment_id=11112222),
     ]
     await coordinator._async_update_data()
     await hass.async_block_till_done()
 
     assert len(events) == 1
-    assert events[0].data["barcode"] == DELIVERED_CODE
+    assert events[0].data["barcode"] == "11112222"
 
 
-async def test_status_never_changes_so_no_status_changed_event_fires(hass):
+async def test_step_section_to_delivered_fires_delivered_event(hass):
+    entry = _entry()
+    entry.add_to_hass(hass)
+    client = _client(received=[active_item()])
+    coordinator = MondialRelayCoordinator(hass, client, entry)
+
+    delivered, changed = [], []
+    hass.bus.async_listen(f"{DOMAIN}_parcel_delivered", lambda e: delivered.append(e))
+    hass.bus.async_listen(f"{DOMAIN}_parcel_status_changed", lambda e: changed.append(e))
+
+    await coordinator._async_update_data()
+    client.async_get_list_received.return_value = [list_item(step_section=3)]
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    assert [e.data["barcode"] for e in delivered] == [ACTIVE_CODE]
+    assert changed == []
+
+
+async def test_unchanged_status_fires_no_status_changed_event(hass):
     entry = _entry()
     entry.add_to_hass(hass)
     client = _client(received=[active_item()])
@@ -307,10 +325,9 @@ def test_delivered_codes_always_empty(hass):
 # ---------------------------------------------------------------------------
 # generic status-changed/delivered/delivery-time-changed event machinery
 #
-# Reachable in principle (every carrier in the suite shares this code path),
-# but not from real Mondial Relay data yet: status is always ``unknown`` and
-# ``planned_from`` is always ``None`` pre-1.0 (see parcels.py). Hand-built
-# dicts exercise the same generic branches other pre-1.0 carriers do.
+# Shared by every carrier in the suite. ``planned_from`` is always ``None``
+# here and the step section never yields ``out_for_delivery``, so hand-built
+# dicts exercise the same generic branches.
 # ---------------------------------------------------------------------------
 
 

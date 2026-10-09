@@ -22,6 +22,7 @@ TO_REDACT = {
     "sender",
     "receiver",
     "url",
+    "delivered_at",
     # carrier payload under raw
     "shipmentId",
     "shipmentUid",

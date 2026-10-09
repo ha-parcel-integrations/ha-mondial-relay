@@ -108,23 +108,23 @@ unconfirmed number on an account whose parcel list loads fine must still set
 up successfully. Only an explicit `false` counts as unconfirmed; a missing or
 reshaped `phone` object warns once (`api.has_confirmed_phone`) and passes.
 
-**Pre-1.0: `status` is always `unknown`, `raw_status` is `str(stepSection)`.**
-`expedition.stepSection` is a plain integer with no confirmed vocabulary (a
-single live sample showed `3`; the app's own reconstructed string enum did
-not match it on the wire). `parcels.py::normalize_parcel` deliberately maps
-nothing — do not add a `_STEP_SECTION_MAP` until a consented account fixture
-(covering both list endpoints, plus either `parcels-detail` or a second
-distinct `stepSection` value) settles it. Once it does, keep the existing
-one-shot-warning shape for any value outside the confirmed map; never map by
-`stepHint`/`stepPictoName`/a tracking code/translated text.
+**`stepSection` is the app's own step-section enum, mapped by its integer
+value** (`parcels._STEP_SECTION_MAP`): `1` → `at_pickup_point`, `2` →
+`in_transit`, `3` → `delivered`. `0` and `4` have no consumer meaning and stay
+`unknown` with the one-shot warning, like any value outside the map. `3` is
+confirmed on two real accounts (#8); `1`/`2` rest on the app alone, so treat a
+report contradicting them as data, not noise. `raw_status` stays
+`str(stepSection)`. `hasProblem: true` turns any non-delivered parcel into
+`problem`. `delivered_at` is the delivered parcel's `tracingDate` and is
+redacted in diagnostics like the raw field. Never map by
+`stepHint`/`stepPictoName`/a tracing code/translated text.
 
 **`CAPABILITIES` is deliberately empty.** Every optional field —
 `planned_from`/`planned_to`, `pickup_point`, `url`, `weight`, `dimensions`,
-`history` — is `None` until the same fixture gate above clears it. `pickup`
-stays `False` even for a `locker: true` shipment; that field's meaning for
-the *recipient* is unconfirmed. `delivered` stays `False` unconditionally —
-there is no confirmed terminal signal yet, and guessing one would eventually
-have to be walked back once real data disagrees.
+`history` — is `None` until a consented account fixture (covering both list
+endpoints, plus `parcels-detail`) confirms it. `pickup` stays `False` even
+for a `locker: true` shipment; that field's meaning for the *recipient* is
+unconfirmed.
 
 **`raw` is the full list item** (`{expedition, delivery}`), untrimmed.
 Privacy lives only in `diagnostics.py`'s redaction set — when the fixture
@@ -146,8 +146,8 @@ Retrofit interface has `parcels-list-received`, `parcels-list-shipped`,
 `parcel-detail-not-migrated` and a `POST easy-access-zone`. We call the two
 lists plus `user-infos`. `parcels-detail`'s `parcelType` is confirmed as
 `"shipped"`/`"received"` (from the app), but its response envelope is not, and
-`parcels-search` is still unprobed — both out of scope until the release
-fixture gate above is cleared. The **`*-not-migrated` pair is a decision, not
+`parcels-search` is still unprobed — both out of scope until a
+consented `parcels-detail` fixture exists. The **`*-not-migrated` pair is a decision, not
 a gap**: that list only holds a shipment the user created minutes ago (the
 app's own copy is *"Le colis est en cours de création. Veuillez patienter
 quelques minutes."*), so on a 15–45 minute poll it would buy a sensor that

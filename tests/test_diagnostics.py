@@ -25,8 +25,9 @@ async def test_diagnostics_redacts_and_counts(hass):
             "barcode": "06180712345678",
             "sender": "V1VINTNL",
             "receiver": None,
-            "status": "unknown",
-            "raw_status": "3",
+            "status": "in_transit",
+            "raw_status": "2",
+            "delivered_at": "2026-04-27T23:03:58Z",
             "raw": list_item(),
         }
     ]
@@ -54,11 +55,12 @@ async def test_diagnostics_redacts_and_counts(hass):
     assert result["entry_data"]["device_uid"] == "**REDACTED**"
     assert result["incoming"][0]["barcode"] == "**REDACTED**"
     assert result["incoming"][0]["sender"] == "**REDACTED**"
+    assert result["incoming"][0]["delivered_at"] == "**REDACTED**"
     # non-identifying fields survive, or the diagnostics would be useless
-    assert result["incoming"][0]["status"] == "unknown"
-    assert result["incoming"][0]["raw_status"] == "3"
+    assert result["incoming"][0]["status"] == "in_transit"
+    assert result["incoming"][0]["raw_status"] == "2"
     raw = result["incoming"][0]["raw"]
-    assert raw["expedition"]["stepSection"] == 3
+    assert raw["expedition"]["stepSection"] == 2
     for key in ("shipmentId", "shipmentUid", "tracingCode", "tracingSubCode",
                 "tracingDate", "brandLabel", "markAlphaCode", "markNumCode"):
         assert raw["expedition"][key] == "**REDACTED**"

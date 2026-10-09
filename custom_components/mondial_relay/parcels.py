@@ -1,14 +1,9 @@
 """Canonical parcel shape and inbox-list helpers.
 
-Pre-1.0: the account backend's ``expedition.stepSection`` is a plain integer
-with no confirmed int-to-status vocabulary (a single sample showed ``3``; the
-app's own string enum did not match it on the wire — see the mechanics
-research). Every parcel therefore publishes ``status: unknown`` and
-``raw_status: str(stepSection)`` unconditionally — mapping any value now
-would be a guess this integration has no way to correct itself. Once a
-consented account fixture settles the vocabulary, replace
-:func:`normalize_parcel`'s status handling with a real ``_STEP_SECTION_MAP``
-and keep this module's one-shot-warning shape for anything outside it.
+``expedition.stepSection`` is the integer value of the official app's own
+step-section enum; ``raw_status`` carries it as a string. ``0`` and ``4``
+have no consumer meaning and, like any value outside the map, publish
+``unknown`` with a one-shot warning.
 
 Everything here is a **pure function** — no I/O, no Home Assistant objects
 beyond the config entry's options — so the carrier-specific mapping stays
@@ -34,6 +29,13 @@ _LOGGER = logging.getLogger(__name__)
 
 _overlap_warned = False
 _unmapped_steps_logged: set[str] = set()
+
+
+_STEP_SECTION_MAP: dict[str, ParcelStatus] = {
+    "1": ParcelStatus.AT_PICKUP_POINT,
+    "2": ParcelStatus.IN_TRANSIT,
+    "3": ParcelStatus.DELIVERED,
+}
 
 
 def _warn_unmapped_step(step: str) -> None:
@@ -114,26 +116,29 @@ def _barcode(expedition: dict) -> str | None:
 def normalize_parcel(raw: dict) -> dict:
     """Return a carrier-agnostic parcel dict for one ``expedition``/``delivery`` item.
 
-    Pre-1.0: only ``carrier``, ``barcode``, ``sender`` (when present) and
-    ``raw_status`` carry real data — every other field is ``None``/``False``
-    until a fixture settles the status vocabulary, the detail payload, and
-    what ``locker`` means for the ``pickup`` flag. See the module docstring.
+    The optional fields stay ``None``/``False`` until real data settles the
+    detail payload and what ``locker`` means for the ``pickup`` flag.
     """
     expedition = raw.get("expedition") or {}
     step_section = expedition.get("stepSection")
     raw_status = str(step_section) if step_section is not None else None
-    if raw_status is not None:
+    status = _STEP_SECTION_MAP.get(raw_status or "", ParcelStatus.UNKNOWN)
+    if status is ParcelStatus.UNKNOWN and raw_status is not None:
         _warn_unmapped_step(raw_status)
+    delivered = status is ParcelStatus.DELIVERED
+    if not delivered and expedition.get("hasProblem") is True:
+        status = ParcelStatus.PROBLEM
 
     return {
         "carrier": "Mondial Relay",
         "barcode": _barcode(expedition),
         "sender": expedition.get("brandLabel") or None,
         "receiver": None,
-        "status": ParcelStatus.UNKNOWN,
+        "status": status,
         "raw_status": raw_status,
-        "delivered": False,
-        "delivered_at": None,
+        "delivered": delivered,
+        # The latest tracing event of a delivered parcel is its delivery.
+        "delivered_at": expedition.get("tracingDate") if delivered else None,
         "planned_from": None,
         "planned_to": None,
         "pickup": False,
@@ -174,9 +179,7 @@ def apply_delivered_filter(parcels: list[dict], entry: ConfigEntry) -> list[dict
     from the last N days (an unparseable ``delivered_at`` is kept rather than
     silently dropped); the ``parcels`` type keeps the N most recent. Parcels
     stay *tracked* either way — this only controls what the delivered sensor
-    shows. In practice this pre-1.0 build never marks a parcel delivered, so
-    this always receives an empty list, but stays in place for when the
-    status map is confirmed.
+    shows.
     """
     options = entry.options
     filter_type = options.get(

@@ -1,8 +1,7 @@
 """Sample Mondial Relay BFF payloads shared by the test modules.
 
-Pre-1.0: every list item is an ``{"expedition": ..., "delivery": ...}`` pair —
-there is no confirmed ``detail``/``sender``/``recipient`` at the list level,
-and ``stepSection`` is a plain integer with no confirmed vocabulary. Kept in
+Every list item is an ``{"expedition": ..., "delivery": ...}`` pair — there is
+no confirmed ``detail``/``sender``/``recipient`` at the list level. Kept in
 one module rather than inline in each test — when the payload shape turns out
 to be different from what was assumed here, there is exactly one place to fix.
 """
@@ -21,7 +20,7 @@ def expedition(
     shipment_uid: str = ACTIVE_UID,
     shipment_id: int = int(ACTIVE_CODE),
     tracing_code: str = ACTIVE_TRACING,
-    step_section: int = 3,
+    step_section: int = 2,
     brand_label: str | None = "V1VINTNL",
     locker: bool = True,
     has_problem: bool = False,
@@ -65,7 +64,7 @@ def list_item(
     shipment_uid: str = ACTIVE_UID,
     shipment_id: int = int(ACTIVE_CODE),
     tracing_code: str = ACTIVE_TRACING,
-    step_section: int = 3,
+    step_section: int = 2,
     brand_label: str | None = "V1VINTNL",
     locker: bool = True,
     has_problem: bool = False,
@@ -87,7 +86,7 @@ def list_item(
 
 
 def active_item(shipment_uid: str = ACTIVE_UID, shipment_id: int = int(ACTIVE_CODE)) -> dict:
-    """A representative raw item — no different from any other pre-1.0."""
+    """A parcel still in transit."""
     return list_item(
         shipment_uid=shipment_uid, shipment_id=shipment_id, tracing_code=ACTIVE_TRACING
     )
@@ -96,12 +95,12 @@ def active_item(shipment_uid: str = ACTIVE_UID, shipment_id: int = int(ACTIVE_CO
 def delivered_item(
     shipment_uid: str = DELIVERED_UID, shipment_id: int = int(DELIVERED_CODE)
 ) -> dict:
-    """Another representative raw item, distinct UID/shipment ID."""
+    """A delivered parcel, distinct UID/shipment ID."""
     return list_item(
         shipment_uid=shipment_uid,
         shipment_id=shipment_id,
         tracing_code=DELIVERED_TRACING,
-        step_section=5,
+        step_section=3,
     )
 
 

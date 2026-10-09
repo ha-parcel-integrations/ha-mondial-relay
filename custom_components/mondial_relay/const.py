@@ -34,11 +34,10 @@ KNOWN_CAPABILITIES = frozenset(
     {"weight", "dimensions", "delivery_window", "pickup_point", "url", "history"}
 )
 
-# Empty on purpose: the carrier's integer status vocabulary is unconfirmed, so
-# every optional field this integration could someday populate — pickup point,
-# ETA, weight/dimensions, a tracking URL, history — is still null on every
-# parcel. Add an entry here only once a normalizer field is proven non-null
-# against a real, consented account fixture.
+# Empty on purpose: every optional field this integration could someday
+# populate — pickup point, ETA, weight/dimensions, a tracking URL, history — is
+# still null on every parcel. Add an entry here only once a normalizer field is
+# proven non-null against a real, consented account fixture.
 CAPABILITIES: frozenset[str] = frozenset()
 
 # Fields not confirmed yet — the docs site shows them as "awaiting data".

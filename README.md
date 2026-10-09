@@ -7,13 +7,11 @@
 
 > 💬 Questions or feedback? Join the discussion on the [Home Assistant community](https://community.home-assistant.io/t/packages-postnl-dhl-nl-dpd-and-gls-parcel-integration/112433/).
 
-> ⚠️ **Pre-1.0 release.** Mondial Relay's account app reports each parcel's
-> progress as a plain integer with no published meaning, and this integration
-> has not yet had a real, consented sample confirming what each value stands
-> for. Until then every parcel reports `status: unknown` — the carrier's own
-> value is still visible as `raw_status`, and the parcel is still imported,
-> counted and tracked. See [Parcel status reference](#parcel-status-reference)
-> and [Troubleshooting](#troubleshooting).
+> ⚠️ **Pre-1.0 release.** Each parcel's status (in transit, ready at the
+> pickup point, delivered) is mapped, but the expected delivery moment, the
+> pickup point's details and the status history are not populated yet. See
+> [Parcel status reference](#parcel-status-reference) and
+> [Troubleshooting](#troubleshooting).
 
 A custom Home Assistant integration that tracks your [Mondial Relay](https://www.mondialrelay.fr) parcels. Sign in with your Mondial Relay / InPost Group account and every parcel it already knows about — sent and received — is imported automatically. There is nothing to type in per parcel.
 
@@ -100,9 +98,8 @@ what your tracked parcels are actually doing:
   today, starting an hour before its delivery window opens (or immediately if
   no window is known yet).
 - **Normal (every 45 minutes)** — for anything else still on its way. Every
-  parcel currently falls into this tier pre-1.0, since the delivery window
-  and out-for-delivery status are not yet populated (see the pre-1.0 note
-  above).
+  parcel currently falls into this tier, since the delivery window and
+  out-for-delivery status are not yet populated (see the pre-1.0 note above).
 - **Never fully stops** — with nothing hot or in transit, polling keeps
   running at the normal cadence, since that's also how a new shipment on your
   account gets discovered.
@@ -121,6 +118,7 @@ Standard HA removal applies: **Settings → Devices & Services → Mondial Relay
 | `sensor.mondial_relay_outgoing_parcels` | Number of active parcels you sent |
 | `sensor.mondial_relay_parcel_<code>` | One per tracked parcel (either direction); state is the canonical status, attributes carry the full normalised parcel |
 | `sensor.mondial_relay_next_delivery` | Earliest expected delivery moment across all active incoming parcels — currently always empty, see the pre-1.0 note above |
+| `sensor.mondial_relay_awaiting_pickup` | Number of incoming parcels ready to collect at a pickup point |
 | `sensor.mondial_relay_delivered_parcels` | Recently delivered incoming parcels (see the retention option) |
 | `sensor.mondial_relay_outgoing_delivered_parcels` | Recently delivered outgoing parcels (see the retention option) |
 | `sensor.mondial_relay_last_successful_update` | Diagnostic: when Mondial Relay was last polled successfully |
@@ -129,11 +127,15 @@ A delivered parcel moves from its per-parcel sensor to the appropriate delivered
 
 ## Parcel status reference
 
-The `status` field is the carrier-agnostic enum shared by the whole integration family. Pre-1.0, Mondial Relay only ever reports one value — see the note at the top of this README:
+The `status` field is the carrier-agnostic enum shared by the whole integration family. Mondial Relay reports these:
 
 | Status | Meaning |
 |---|---|
-| `unknown` | Always, for now — the carrier's own progress value is visible as `raw_status` |
+| `in_transit` | On its way |
+| `at_pickup_point` | Ready to collect at the pickup point or locker |
+| `delivered` | Delivered or collected |
+| `problem` | Mondial Relay flags a problem with the shipment |
+| `unknown` | A progress value Mondial Relay has no consumer meaning for, or one not seen before |
 
 The carrier's own value is always available as `raw_status`.
 
@@ -173,7 +175,7 @@ logger:
 
 ## Troubleshooting
 
-- **Every parcel shows `unknown`** — expected pre-1.0; see the note at the top of this README. The carrier's own progress value is still visible as `raw_status` on the parcel sensor.
+- **A parcel shows `unknown`** — Mondial Relay reported a progress value this integration does not map. A warning in the log has a link to report it; the carrier's own value is visible as `raw_status` on the parcel sensor.
 - **"Mondial Relay rejected this integration's request" in the log** — this is not a problem with your account, and signing in again will not fix it. Check for an integration update, and if none is available, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new).
 - **"Mondial Relay rejected that sign-in"** — the address a sign-in produces can only be used once and expires within minutes. Open the sign-in link again, sign in again, and paste the fresh address straight away.
 - **"Mondial Relay's account service refused the session it had just issued"** or **"would not release its parcel list"** — the sign-in itself worked, so pasting a different address will not help. Almost always an account that has never signed in on Mondial Relay's own site or app: do that once (see [Configuration](#configuration)), then repeat the sign-in here. If it persists, [open an issue](https://github.com/ha-parcel-integrations/ha-mondial-relay/issues/new) with the warning logged under `custom_components.mondial_relay`.
