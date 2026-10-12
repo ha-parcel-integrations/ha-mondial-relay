@@ -1,0 +1,144 @@
+{
+  "title": "Mondial Relay",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar Mondial Relay",
+        "description": "Elige el país en el que está registrada tu cuenta de Mondial Relay. Determina qué página de inicio de sesión obtienes y qué número de teléfono acepta.",
+        "data": {
+          "country": "País"
+        }
+      },
+      "sign_in": {
+        "title": "Iniciar sesión en Mondial Relay",
+        "description": "**Haz esto primero:** inicia sesión una vez en {website_url} con la cuenta que quieras usar y comprueba que tu número de teléfono esté confirmado allí. Mondial Relay no entrega los paquetes de una cuenta hasta que esta haya iniciado sesión al menos una vez en su propio sitio web o aplicación, y Home Assistant no puede hacer ese paso por ti.\n\nLuego abre esta dirección en un navegador e inicia sesión con tu cuenta de Mondial Relay (InPost Group):\n\n{authorize_url}\n\nLa página no terminará de cargarse después — eso es normal. Copia la dirección completa de la barra de direcciones del navegador y pégala aquí abajo.",
+        "data": {
+          "callback_url": "URL de retorno"
+        }
+      },
+      "reauth_confirm": {
+        "title": "El inicio de sesión de Mondial Relay ha caducado",
+        "description": "Abre esta dirección en un navegador e inicia sesión de nuevo:\n\n{authorize_url}\n\nLa página no terminará de cargarse después — eso es normal. Copia la dirección completa de la barra de direcciones del navegador y pégala aquí abajo.",
+        "data": {
+          "callback_url": "URL de retorno"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Mondial Relay rechazó ese inicio de sesión. La dirección que genera un inicio de sesión solo se puede usar una vez y caduca rápido: vuelve a abrir el enlace de arriba y pega la nueva dirección.",
+      "phone_not_confirmed": "Mondial Relay no entregó la lista de paquetes de esta cuenta, y su número de teléfono no está confirmado, que es la causa más probable. Abre la aplicación o el sitio web de Mondial Relay, inicia sesión con esta cuenta, confirma tu número de teléfono y vuelve a intentarlo.",
+      "parcels_unavailable": "La cuenta es válida, pero Mondial Relay no entregó su lista de paquetes. La causa habitual es una cuenta que nunca ha iniciado sesión en el sitio web o la aplicación de Mondial Relay: hazlo una vez y repite el inicio de sesión aquí. Si sigue ocurriendo, infórmalo con la advertencia registrada en custom_components.mondial_relay.",
+      "account_rejected": "El inicio de sesión funcionó, pero el servicio de cuentas de Mondial Relay rechazó la sesión que acababa de emitir. La causa habitual es una cuenta que nunca ha iniciado sesión en el sitio web o la aplicación de Mondial Relay: hazlo una vez y repite el inicio de sesión aquí. Si sigue ocurriendo, infórmalo con la advertencia registrada en custom_components.mondial_relay.",
+      "invalid_redirect": "Eso no parece la dirección a la que te redirigió la página de inicio de sesión. Asegúrate de haber copiado la dirección completa después de iniciar sesión.",
+      "cannot_connect": "No se pudo conectar con Mondial Relay. Inténtalo de nuevo."
+    },
+    "abort": {
+      "already_configured": "Esta cuenta de Mondial Relay ya está configurada.",
+      "reauth_successful": "Mondial Relay se ha vuelto a autenticar correctamente.",
+      "wrong_account": "Ese inicio de sesión corresponde a otra cuenta de Mondial Relay. Inicia sesión con la cuenta con la que se configuró esta entrada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de Mondial Relay",
+        "sections": {
+          "delivered": {
+            "name": "Paquetes entregados",
+            "data": {
+              "delivered_filter_type": "Filtrar por",
+              "delivered_filter_amount": "Cantidad"
+            },
+            "data_description": {
+              "delivered_filter_type": "Muestra los paquetes entregados de los últimos X días, o limita a los X más recientes.",
+              "delivered_filter_amount": "Número de días o paquetes a mostrar."
+            }
+          },
+          "history": {
+            "name": "Historial de paquetes",
+            "data": {
+              "include_history": "Incluir historial de estados"
+            },
+            "data_description": {
+              "include_history": "Reservado para una versión futura: el sistema de cuentas de Mondial Relay no ofrece por ahora un historial de eventos que mostrar aquí."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "delivered_filter_type": {
+      "options": {
+        "days": "Días",
+        "parcels": "Número de paquetes"
+      }
+    },
+    "country": {
+      "options": {
+        "fr": "Francia",
+        "be": "Bélgica",
+        "nl": "Países Bajos",
+        "es": "España",
+        "pt": "Portugal"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "parcel_registered": "Se registró un paquete",
+      "parcel_status_changed": "El estado de un paquete ha cambiado",
+      "parcel_delivered": "Se entregó un paquete",
+      "parcel_delivery_time_changed": "La hora de entrega prevista de un paquete ha cambiado",
+      "outgoing_parcel_status_changed": "El estado de un paquete enviado cambió",
+      "outgoing_parcel_delivered": "Se entregó un paquete enviado"
+    }
+  },
+  "entity": {
+    "button": {
+      "refresh": {
+        "name": "Actualizar"
+      }
+    },
+    "calendar": {
+      "deliveries": {
+        "name": "Entregas"
+      }
+    },
+    "sensor": {
+      "incoming_parcels": {
+        "name": "Paquetes entrantes",
+        "unit_of_measurement": "paquetes"
+      },
+      "next_delivery": {
+        "name": "Próxima entrega"
+      },
+      "en_route_to_pickup_point": {
+        "name": "En camino al punto de recogida",
+        "unit_of_measurement": "paquetes"
+      },
+      "awaiting_pickup": {
+        "name": "Listo para recoger",
+        "unit_of_measurement": "paquetes"
+      },
+      "delivered_parcels": {
+        "name": "Paquetes entregados",
+        "unit_of_measurement": "paquetes"
+      },
+      "outgoing_parcels": {
+        "name": "Paquetes salientes",
+        "unit_of_measurement": "paquetes"
+      },
+      "outgoing_delivered_parcels": {
+        "name": "Paquetes salientes entregados",
+        "unit_of_measurement": "paquetes"
+      },
+      "last_update": {
+        "name": "Última actualización correcta"
+      },
+      "parcel": {
+        "name": "Paquete {barcode}"
+      }
+    }
+  }
+}

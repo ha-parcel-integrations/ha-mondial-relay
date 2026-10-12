@@ -1,0 +1,144 @@
+{
+  "title": "Mondial Relay",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurer Mondial Relay",
+        "description": "Choisissez le pays dans lequel votre compte Mondial Relay est enregistré. Il détermine la page de connexion que vous obtenez et le numéro de téléphone qu'elle accepte.",
+        "data": {
+          "country": "Pays"
+        }
+      },
+      "sign_in": {
+        "title": "Se connecter à Mondial Relay",
+        "description": "**À faire en premier :** connectez-vous une fois sur {website_url} avec le compte que vous souhaitez utiliser et vérifiez que votre numéro de téléphone y est confirmé. Mondial Relay ne communique les colis d'un compte qu'après au moins une connexion sur son propre site ou son application, et Home Assistant ne peut pas faire cette étape à votre place.\n\nOuvrez ensuite cette adresse dans un navigateur et connectez-vous avec votre compte Mondial Relay (InPost Group) :\n\n{authorize_url}\n\nLa page ne finira pas de charger ensuite — c'est normal. Copiez l'adresse complète depuis la barre d'adresse de votre navigateur et collez-la ci-dessous.",
+        "data": {
+          "callback_url": "URL de retour"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Connexion Mondial Relay expirée",
+        "description": "Ouvrez cette adresse dans un navigateur et reconnectez-vous :\n\n{authorize_url}\n\nLa page ne finira pas de charger ensuite — c'est normal. Copiez l'adresse complète depuis la barre d'adresse de votre navigateur et collez-la ci-dessous.",
+        "data": {
+          "callback_url": "URL de retour"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Mondial Relay a refusé cette connexion. L'adresse produite par une connexion ne peut servir qu'une fois et expire rapidement : rouvrez le lien ci-dessus et collez la nouvelle adresse.",
+      "phone_not_confirmed": "Mondial Relay n'a pas communiqué la liste des colis de ce compte, et son numéro de téléphone n'est pas confirmé — c'est la raison la plus probable. Ouvrez l'application ou le site de Mondial Relay, connectez-vous avec ce compte et confirmez votre numéro de téléphone, puis réessayez.",
+      "parcels_unavailable": "Le compte est valide, mais Mondial Relay n'a pas communiqué sa liste de colis. La cause habituelle est un compte qui ne s'est jamais connecté sur le site ou l'application de Mondial Relay — faites-le une fois, puis recommencez la connexion ici. Si cela persiste, signalez-le avec l'avertissement enregistré sous custom_components.mondial_relay.",
+      "account_rejected": "La connexion a fonctionné, mais le service de comptes de Mondial Relay a refusé la session qu'il venait d'émettre. La cause habituelle est un compte qui ne s'est jamais connecté sur le site ou l'application de Mondial Relay — faites-le une fois, puis recommencez la connexion ici. Si cela persiste, signalez-le avec l'avertissement enregistré sous custom_components.mondial_relay.",
+      "invalid_redirect": "Cela ne ressemble pas à l'adresse vers laquelle la page de connexion vous a redirigé. Vérifiez que vous avez copié l'adresse entière après vous être connecté.",
+      "cannot_connect": "Impossible de joindre Mondial Relay. Veuillez réessayer."
+    },
+    "abort": {
+      "already_configured": "Ce compte Mondial Relay est déjà configuré.",
+      "reauth_successful": "Mondial Relay a été réauthentifié avec succès.",
+      "wrong_account": "Cette connexion concerne un autre compte Mondial Relay. Connectez-vous avec le compte utilisé pour configurer cette entrée."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Mondial Relay",
+        "sections": {
+          "delivered": {
+            "name": "Colis livrés",
+            "data": {
+              "delivered_filter_type": "Filtrer par",
+              "delivered_filter_amount": "Quantité"
+            },
+            "data_description": {
+              "delivered_filter_type": "Afficher les colis livrés des X derniers jours, ou se limiter aux X plus récents.",
+              "delivered_filter_amount": "Nombre de jours ou de colis à afficher."
+            }
+          },
+          "history": {
+            "name": "Historique des colis",
+            "data": {
+              "include_history": "Inclure l'historique des statuts"
+            },
+            "data_description": {
+              "include_history": "Réservé à une version future — le backend de compte de Mondial Relay n'expose pour l'instant aucun historique d'événements à afficher ici."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "delivered_filter_type": {
+      "options": {
+        "days": "Jours",
+        "parcels": "Nombre de colis"
+      }
+    },
+    "country": {
+      "options": {
+        "fr": "France",
+        "be": "Belgique",
+        "nl": "Pays-Bas",
+        "es": "Espagne",
+        "pt": "Portugal"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "parcel_registered": "Un colis a été enregistré",
+      "parcel_status_changed": "Le statut d'un colis a changé",
+      "parcel_delivered": "Un colis a été livré",
+      "parcel_delivery_time_changed": "L'heure de livraison prévue d'un colis a changé",
+      "outgoing_parcel_status_changed": "Le statut d'un colis envoyé a changé",
+      "outgoing_parcel_delivered": "Un colis envoyé a été livré"
+    }
+  },
+  "entity": {
+    "button": {
+      "refresh": {
+        "name": "Actualiser"
+      }
+    },
+    "calendar": {
+      "deliveries": {
+        "name": "Livraisons"
+      }
+    },
+    "sensor": {
+      "incoming_parcels": {
+        "name": "Colis entrants",
+        "unit_of_measurement": "colis"
+      },
+      "next_delivery": {
+        "name": "Prochaine livraison"
+      },
+      "en_route_to_pickup_point": {
+        "name": "En route vers le point relais",
+        "unit_of_measurement": "colis"
+      },
+      "awaiting_pickup": {
+        "name": "En attente de retrait",
+        "unit_of_measurement": "colis"
+      },
+      "delivered_parcels": {
+        "name": "Colis livrés",
+        "unit_of_measurement": "colis"
+      },
+      "outgoing_parcels": {
+        "name": "Colis sortants",
+        "unit_of_measurement": "colis"
+      },
+      "outgoing_delivered_parcels": {
+        "name": "Colis sortants livrés",
+        "unit_of_measurement": "colis"
+      },
+      "last_update": {
+        "name": "Dernière mise à jour réussie"
+      },
+      "parcel": {
+        "name": "Colis {barcode}"
+      }
+    }
+  }
+}
