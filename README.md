@@ -56,7 +56,11 @@ A custom Home Assistant integration that tracks your [Mondial Relay](https://www
 
 1. In HACS, choose the three-dot menu → **Custom repositories**.
 2. Add `https://github.com/ha-parcel-integrations/ha-mondial-relay` as an **Integration**.
-3. Install **Mondial Relay** and restart Home Assistant.
+3. Install **Mondial Relay** and restart Home Assistant if HACS asks you to.
+
+Or click the button below to open it directly in HACS:
+
+[![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ha-parcel-integrations&repository=ha-mondial-relay&category=integration)
 
 ### Manual
 
@@ -64,9 +68,11 @@ Copy `custom_components/mondial_relay` into your `config/custom_components/` fol
 
 ## Configuration
 
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=mondial_relay)
+
 **Before you start:** sign in once on Mondial Relay's own website (or in their app) with the account you want to use, and make sure your phone number is confirmed there — [mondialrelay.fr](https://www.mondialrelay.fr), [mondialrelay.be](https://www.mondialrelay.be), [mondialrelay.nl](https://www.mondialrelay.nl), [inpost.es](https://www.inpost.es) or [inpost.pt](https://www.inpost.pt). Mondial Relay does not release an account's parcels until it has signed in there at least once, and Home Assistant cannot do that step for you.
 
-Then add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in three steps:
+Or set it up by hand: add the integration via **Settings → Devices & Services → Add Integration → Mondial Relay**. Home Assistant cannot receive the sign-in page's redirect directly, so the flow works in three steps:
 
 1. Pick the country your Mondial Relay account is registered in — France, Belgium, the Netherlands, Spain or Portugal. It decides which sign-in page you are sent to, and which phone number that page accepts.
 2. Open the address the setup screen shows you in a browser and sign in with your Mondial Relay / InPost Group account. The page will not finish loading afterwards — that is expected.
