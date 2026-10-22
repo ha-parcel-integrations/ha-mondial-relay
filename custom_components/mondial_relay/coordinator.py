@@ -148,6 +148,8 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
     sent.
     """
 
+    config_entry: ConfigEntry
+
     def __init__(
         self,
         hass: HomeAssistant,

@@ -264,6 +264,7 @@ class _MondialRelayPickupListSensor(
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION
     _unrecorded_attributes = frozenset({"parcels"})
+    _suffix: str
 
     def __init__(
         self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
@@ -275,6 +276,9 @@ class _MondialRelayPickupListSensor(
     @property
     def native_value(self) -> int:
         return len(self._parcels())
+
+    def _parcels(self) -> list[dict]:
+        raise NotImplementedError
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

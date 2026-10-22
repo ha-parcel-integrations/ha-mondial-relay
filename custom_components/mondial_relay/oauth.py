@@ -15,6 +15,7 @@ flow) — same shape, different provider.
 from __future__ import annotations
 
 import base64
+import contextlib
 from datetime import UTC, datetime, timedelta
 import hashlib
 import json
@@ -292,6 +293,10 @@ class MondialRelayOAuthSession:
         return self._access_token
 
     async def _async_refresh(self) -> None:
+        if self.refresh_token is None:
+            raise MondialRelayOAuthError(
+                "no refresh_token to refresh with — the config entry is not set up"
+            )
         body = {
             "grant_type": "refresh_token",
             "client_id": MR_OAUTH_CLIENT_ID,
@@ -340,10 +345,10 @@ class MondialRelayOAuthSession:
         self._access_token = access_token
         self.id_token = payload.get("id_token") or self.id_token
         expires_in = payload.get("expires_in")
-        try:
-            lifetime = timedelta(seconds=float(expires_in))
-        except (TypeError, ValueError):
-            lifetime = _FALLBACK_TOKEN_LIFETIME
+        lifetime = _FALLBACK_TOKEN_LIFETIME
+        if expires_in is not None:
+            with contextlib.suppress(TypeError, ValueError):
+                lifetime = timedelta(seconds=float(expires_in))
         self._expires_at = datetime.now(UTC) + lifetime
 
 
