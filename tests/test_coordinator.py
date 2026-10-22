@@ -2,11 +2,13 @@
 
 The parcel mapping itself is covered by ``test_parcels.py``.
 """
+
 from unittest.mock import AsyncMock
 
-import pytest
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import UpdateFailed
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.mondial_relay.api import (
@@ -250,7 +252,9 @@ async def test_step_section_to_delivered_fires_delivered_event(hass):
 
     delivered, changed = [], []
     hass.bus.async_listen(f"{DOMAIN}_parcel_delivered", lambda e: delivered.append(e))
-    hass.bus.async_listen(f"{DOMAIN}_parcel_status_changed", lambda e: changed.append(e))
+    hass.bus.async_listen(
+        f"{DOMAIN}_parcel_status_changed", lambda e: changed.append(e)
+    )
 
     await coordinator._async_update_data()
     client.async_get_list_received.return_value = [list_item(step_section=3)]
@@ -268,9 +272,7 @@ async def test_unchanged_status_fires_no_status_changed_event(hass):
     coordinator = MondialRelayCoordinator(hass, client, entry)
 
     events = []
-    hass.bus.async_listen(
-        f"{DOMAIN}_parcel_status_changed", lambda e: events.append(e)
-    )
+    hass.bus.async_listen(f"{DOMAIN}_parcel_status_changed", lambda e: events.append(e))
 
     await coordinator._async_update_data()
     await coordinator._async_update_data()
@@ -280,8 +282,6 @@ async def test_unchanged_status_fires_no_status_changed_event(hass):
 
 
 async def test_event_carries_device_id(hass):
-    from homeassistant.helpers import device_registry as dr
-
     entry = _entry()
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(
@@ -303,8 +303,6 @@ async def test_event_carries_device_id(hass):
 
 
 async def test_device_id_is_cached_after_first_lookup(hass):
-    from homeassistant.helpers import device_registry as dr
-
     entry = _entry()
     entry.add_to_hass(hass)
     device = dr.async_get(hass).async_get_or_create(
@@ -331,7 +329,9 @@ def test_delivered_codes_always_empty(hass):
 # ---------------------------------------------------------------------------
 
 
-def _fake_parcel(barcode: str, status: ParcelStatus, planned_from=None, planned_to=None) -> dict:
+def _fake_parcel(
+    barcode: str, status: ParcelStatus, planned_from=None, planned_to=None
+) -> dict:
     return {
         "barcode": barcode,
         "status": status,
@@ -348,13 +348,9 @@ async def test_fires_status_changed_event(hass):
     coordinator._known_delivery_times = {"A": (None, None)}
 
     events = []
-    hass.bus.async_listen(
-        f"{DOMAIN}_parcel_status_changed", lambda e: events.append(e)
-    )
+    hass.bus.async_listen(f"{DOMAIN}_parcel_status_changed", lambda e: events.append(e))
 
-    coordinator._fire_change_events(
-        [_fake_parcel("A", ParcelStatus.OUT_FOR_DELIVERY)]
-    )
+    coordinator._fire_change_events([_fake_parcel("A", ParcelStatus.OUT_FOR_DELIVERY)])
     await hass.async_block_till_done()
 
     assert len(events) == 1
@@ -446,7 +442,9 @@ async def test_outgoing_delivery_fires_delivered_not_status_changed(hass):
         f"{DOMAIN}_outgoing_parcel_status_changed", lambda e: changed.append(e)
     )
 
-    coordinator._fire_outgoing_change_events([_fake_parcel("A", ParcelStatus.DELIVERED)])
+    coordinator._fire_outgoing_change_events(
+        [_fake_parcel("A", ParcelStatus.DELIVERED)]
+    )
     await hass.async_block_till_done()
 
     assert changed == []

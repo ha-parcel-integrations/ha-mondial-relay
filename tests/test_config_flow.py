@@ -1,9 +1,10 @@
 """Tests for the Mondial Relay config and options flow."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
-import pytest
 from homeassistant.config_entries import SOURCE_USER
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.mondial_relay.api import (
@@ -33,7 +34,9 @@ SUBJECT_FN = "custom_components.mondial_relay.config_flow.decode_id_token_subjec
 AUTHORIZE_URL = "https://account.inpost-group.com/oauth2/authorize?..."
 STATE = "state-1"
 VALID_CALLBACK = f"https://account.inpost-group.com/callback?code=abc123&state={STATE}"
-WRONG_STATE_CALLBACK = "https://account.inpost-group.com/callback?code=abc123&state=other"
+WRONG_STATE_CALLBACK = (
+    "https://account.inpost-group.com/callback?code=abc123&state=other"
+)
 NO_CODE_CALLBACK = f"https://account.inpost-group.com/callback?state={STATE}"
 WRONG_HOST_CALLBACK = f"https://evil.example.com/callback?code=abc123&state={STATE}"
 
@@ -191,7 +194,7 @@ async def test_user_flow_surfaces_exchange_connection_error(hass):
 
 
 @pytest.mark.parametrize(
-    "user_info_error,expected",
+    ("user_info_error", "expected"),
     [
         # The backend refused the session it had just issued. Not
         # invalid_auth: the sign-in itself worked.
@@ -217,7 +220,7 @@ async def test_user_flow_surfaces_user_info_errors(hass, user_info_error, expect
 
 
 @pytest.mark.parametrize(
-    "validate_error,expected",
+    ("validate_error", "expected"),
     [
         # Distinct from account_rejected: user-infos handed over a record, so
         # the account is fine and only its parcel feed refused.
@@ -230,7 +233,9 @@ async def test_user_flow_surfaces_user_info_errors(hass, user_info_error, expect
 async def test_user_flow_surfaces_parcel_access_errors(hass, validate_error, expected):
     with (
         patch(OAUTH_CLASS, return_value=_fake_oauth()),
-        patch(CLIENT_CLASS, return_value=_fake_client(validate_side_effect=validate_error)),
+        patch(
+            CLIENT_CLASS, return_value=_fake_client(validate_side_effect=validate_error)
+        ),
     ):
         result = await _start(hass)
         result = await hass.config_entries.flow.async_configure(
@@ -400,9 +405,7 @@ async def test_options_flow_saves_and_reloads(hass):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["step_id"] == "init"
 
-    with patch.object(
-        hass.config_entries, "async_schedule_reload"
-    ) as schedule_reload:
+    with patch.object(hass.config_entries, "async_schedule_reload") as schedule_reload:
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
             {

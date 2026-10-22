@@ -8,15 +8,15 @@ InPost Group account, and pastes back the callback URL the browser lands on
 (which it cannot open). Modelled on ha-dhl's DE browser-paste PKCE flow — same
 shape, different provider.
 """
+
 from __future__ import annotations
 
+from collections.abc import Mapping
 import logging
 import secrets
-from collections.abc import Mapping
 from typing import Any
 
 import aiohttp
-import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -27,6 +27,7 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+import voluptuous as vol
 
 from .api import (
     MondialRelayApiClient,
@@ -340,9 +341,7 @@ class MondialRelayOptionsFlowHandler(OptionsFlow):
             # Reload so a changed history/delivered-retention setting takes
             # effect immediately. No update listener is registered —
             # combining the two is deprecated.
-            self.hass.config_entries.async_schedule_reload(
-                self.config_entry.entry_id
-            )
+            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
             return self.async_create_entry(
                 title="",
                 data={

@@ -1,4 +1,5 @@
 """Tests for Mondial Relay device triggers."""
+
 from unittest.mock import AsyncMock
 
 from custom_components.mondial_relay.const import DOMAIN

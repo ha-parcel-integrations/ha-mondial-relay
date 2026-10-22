@@ -1,4 +1,5 @@
 """Tests for Mondial Relay diagnostics."""
+
 from datetime import timedelta
 from unittest.mock import MagicMock
 
@@ -61,11 +62,25 @@ async def test_diagnostics_redacts_and_counts(hass):
     assert result["incoming"][0]["raw_status"] == "2"
     raw = result["incoming"][0]["raw"]
     assert raw["expedition"]["stepSection"] == 2
-    for key in ("shipmentId", "shipmentUid", "tracingCode", "tracingSubCode",
-                "tracingDate", "brandLabel", "markAlphaCode", "markNumCode"):
+    for key in (
+        "shipmentId",
+        "shipmentUid",
+        "tracingCode",
+        "tracingSubCode",
+        "tracingDate",
+        "brandLabel",
+        "markAlphaCode",
+        "markNumCode",
+    ):
         assert raw["expedition"][key] == "**REDACTED**"
-    for key in ("agencyCode", "availabilityDate", "code", "country",
-                "deadline", "deliveryPointId"):
+    for key in (
+        "agencyCode",
+        "availabilityDate",
+        "code",
+        "country",
+        "deadline",
+        "deliveryPointId",
+    ):
         assert raw["delivery"][key] == "**REDACTED**"
 
 

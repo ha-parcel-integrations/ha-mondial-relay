@@ -1,4 +1,5 @@
 """Tests for the Mondial Relay BFF client."""
+
 import json
 from unittest.mock import AsyncMock, MagicMock
 
@@ -27,7 +28,9 @@ USER_INFO = {
 }
 
 
-def _response(status: int, body: object = None, headers: dict | None = None) -> MagicMock:
+def _response(
+    status: int, body: object = None, headers: dict | None = None
+) -> MagicMock:
     response = AsyncMock()
     response.status = status
     response.headers = headers or {}
@@ -52,14 +55,16 @@ def _session_returning(*responses: MagicMock) -> MagicMock:
     return session
 
 
-def _oauth(token: str = "token-1") -> AsyncMock:
+def _oauth(token: str = "token-1") -> AsyncMock:  # noqa: S107 - fake test token
     oauth = AsyncMock()
     oauth.async_get_access_token = AsyncMock(return_value=token)
     oauth.async_handle_unauthorized = AsyncMock(return_value="token-2")
     return oauth
 
 
-def _client(session: MagicMock, oauth: AsyncMock | None = None) -> MondialRelayApiClient:
+def _client(
+    session: MagicMock, oauth: AsyncMock | None = None
+) -> MondialRelayApiClient:
     return MondialRelayApiClient(oauth or _oauth(), session, device_uid=DEVICE_UID)
 
 
@@ -108,8 +113,12 @@ async def test_200_list_is_returned():
 
 async def test_paginates_while_more_pages_remain():
     session = _session_returning(
-        _response(200, list_envelope([active_item("uid-1")], page_index=0, total_pages=2)),
-        _response(200, list_envelope([active_item("uid-2")], page_index=1, total_pages=2)),
+        _response(
+            200, list_envelope([active_item("uid-1")], page_index=0, total_pages=2)
+        ),
+        _response(
+            200, list_envelope([active_item("uid-2")], page_index=1, total_pages=2)
+        ),
     )
     items = await _client(session).async_get_list_received()
     assert [i["expedition"]["shipmentUid"] for i in items] == ["uid-1", "uid-2"]
@@ -202,7 +211,9 @@ async def test_get_list_shipped_returns_list():
 
 
 async def test_validate_parcel_access_is_a_single_bounded_call():
-    session = _session_returning(_response(200, list_envelope([], page_index=0, total_pages=5)))
+    session = _session_returning(
+        _response(200, list_envelope([], page_index=0, total_pages=5))
+    )
     await _client(session).async_validate_parcel_access()
     assert session.get.call_count == 1
 
@@ -226,7 +237,7 @@ async def test_get_user_info_maps_401_to_auth_error():
 
 
 @pytest.mark.parametrize(
-    "phone,expected",
+    ("phone", "expected"),
     [
         ({"number": "+32…", "valid": True}, True),
         ({"number": "+32…", "valid": False}, False),

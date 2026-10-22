@@ -3,6 +3,7 @@
 Only shape is asserted — freshness and non-emptiness — never the derived
 value itself.
 """
+
 from custom_components.mondial_relay.signing import build_signature_headers
 
 

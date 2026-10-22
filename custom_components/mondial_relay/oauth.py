@@ -11,14 +11,15 @@ expires.
 Modelled on ha-dhl's DE OIDC session (a near-identical browser-paste PKCE
 flow) — same shape, different provider.
 """
+
 from __future__ import annotations
 
 import base64
+from datetime import UTC, datetime, timedelta
 import hashlib
 import json
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import parse_qs, quote, urlparse
 
@@ -197,7 +198,7 @@ class MondialRelayOAuthSession:
         """Whether the cached access token is missing or inside the refresh margin."""
         if self._access_token is None or self._expires_at is None:
             return True
-        return datetime.now(timezone.utc) >= self._expires_at - TOKEN_REFRESH_MARGIN
+        return datetime.now(UTC) >= self._expires_at - TOKEN_REFRESH_MARGIN
 
     def pop_refresh_token_changed(self) -> bool:
         """Return whether the refresh token rotated, and clear the flag."""
@@ -237,7 +238,9 @@ class MondialRelayOAuthSession:
             "lang": sign_in_language(language, market),
             "supported_markets": market,
         }
-        query = "&".join(f"{key}={quote(value, safe='')}" for key, value in params.items())
+        query = "&".join(
+            f"{key}={quote(value, safe='')}" for key, value in params.items()
+        )
         return f"{MR_OAUTH_AUTHORIZE_URL}?{query}", code_verifier, state
 
     async def async_exchange_code(self, code: str, code_verifier: str) -> None:
@@ -341,7 +344,7 @@ class MondialRelayOAuthSession:
             lifetime = timedelta(seconds=float(expires_in))
         except (TypeError, ValueError):
             lifetime = _FALLBACK_TOKEN_LIFETIME
-        self._expires_at = datetime.now(timezone.utc) + lifetime
+        self._expires_at = datetime.now(UTC) + lifetime
 
 
 __all__ = [

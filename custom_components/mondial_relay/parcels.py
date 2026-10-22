@@ -9,10 +9,11 @@ Everything here is a **pure function** — no I/O, no Home Assistant objects
 beyond the config entry's options — so the carrier-specific mapping stays
 unit-testable without Home Assistant.
 """
+
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import logging
-from datetime import datetime, timedelta, timezone
 
 from homeassistant.config_entries import ConfigEntry
 
@@ -59,11 +60,11 @@ def parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None
     try:
-        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(str(value))
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=UTC)
     return parsed
 
 
@@ -95,7 +96,7 @@ def warn_inbox_overlap_once(overlap_count: int) -> None:
     reconciling them ourselves, but a shipment counted as both incoming and
     outgoing is still worth a single heads-up per session.
     """
-    global _overlap_warned
+    global _overlap_warned  # noqa: PLW0603 - one-shot warning flag, reset by tests
     if _overlap_warned or not overlap_count:
         return
     _overlap_warned = True
@@ -182,14 +183,12 @@ def apply_delivered_filter(parcels: list[dict], entry: ConfigEntry) -> list[dict
     shows.
     """
     options = entry.options
-    filter_type = options.get(
-        CONF_DELIVERED_FILTER_TYPE, DEFAULT_DELIVERED_FILTER_TYPE
-    )
+    filter_type = options.get(CONF_DELIVERED_FILTER_TYPE, DEFAULT_DELIVERED_FILTER_TYPE)
     amount = int(
         options.get(CONF_DELIVERED_FILTER_AMOUNT, DEFAULT_DELIVERED_FILTER_AMOUNT)
     )
     if filter_type == "days":
-        cutoff = datetime.now(timezone.utc) - timedelta(days=amount)
+        cutoff = datetime.now(UTC) - timedelta(days=amount)
         return [
             parcel
             for parcel in parcels

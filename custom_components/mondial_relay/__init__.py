@@ -1,8 +1,9 @@
 """Mondial Relay parcel tracker custom component for Home Assistant."""
+
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
+import logging
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry

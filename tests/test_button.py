@@ -1,4 +1,5 @@
 """Tests for the Mondial Relay refresh button."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.mondial_relay.button import MondialRelayRefreshButton

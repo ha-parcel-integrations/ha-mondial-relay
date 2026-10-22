@@ -5,6 +5,7 @@ no confirmed ``detail``/``sender``/``recipient`` at the list level. Kept in
 one module rather than inline in each test — when the payload shape turns out
 to be different from what was assumed here, there is exactly one place to fix.
 """
+
 from __future__ import annotations
 
 ACTIVE_UID = "shp-active-0001"
@@ -85,7 +86,9 @@ def list_item(
     }
 
 
-def active_item(shipment_uid: str = ACTIVE_UID, shipment_id: int = int(ACTIVE_CODE)) -> dict:
+def active_item(
+    shipment_uid: str = ACTIVE_UID, shipment_id: int = int(ACTIVE_CODE)
+) -> dict:
     """A parcel still in transit."""
     return list_item(
         shipment_uid=shipment_uid, shipment_id=shipment_id, tracing_code=ACTIVE_TRACING
@@ -104,7 +107,9 @@ def delivered_item(
     )
 
 
-def list_envelope(items: list[dict], *, page_index: int = 0, total_pages: int = 1) -> dict:
+def list_envelope(
+    items: list[dict], *, page_index: int = 0, total_pages: int = 1
+) -> dict:
     """The confirmed paginated envelope both list endpoints share."""
     return {
         "list": items,

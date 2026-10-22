@@ -9,6 +9,7 @@ token (``oauth.py``) and a derived signing header (``signing.py``); either
 one being wrong or stale produces a different, distinguishable failure (see
 the response table in the module-level docstring of ``coordinator.py``).
 """
+
 from __future__ import annotations
 
 import logging
@@ -83,7 +84,7 @@ def has_confirmed_phone(user_info: dict[str, Any]) -> bool:
     shaped ``phone`` object must never block a setup that would otherwise
     work, so it warns once and returns ``True``.
     """
-    global _user_info_shape_warned
+    global _user_info_shape_warned  # noqa: PLW0603 - one-shot warning flag, reset by tests
     phone = user_info.get("phone")
     if isinstance(phone, dict) and "valid" in phone:
         return phone["valid"] is not False
@@ -156,7 +157,9 @@ class MondialRelayApiClient:
                 if response.status == 429:
                     retry_after_header = response.headers.get("Retry-After")
                     try:
-                        retry_after = float(retry_after_header) if retry_after_header else None
+                        retry_after = (
+                            float(retry_after_header) if retry_after_header else None
+                        )
                     except ValueError:
                         retry_after = None
                     raise MondialRelayApiError(

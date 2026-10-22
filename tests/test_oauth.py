@@ -1,4 +1,5 @@
 """Tests for the InPost Group OAuth/PKCE session."""
+
 import base64
 import json
 from unittest.mock import AsyncMock, MagicMock
@@ -29,7 +30,9 @@ def _jwt(payload: dict) -> str:
 def _response(status: int, body: dict | str) -> MagicMock:
     response = AsyncMock()
     response.status = status
-    response.text = AsyncMock(return_value=body if isinstance(body, str) else json.dumps(body))
+    response.text = AsyncMock(
+        return_value=body if isinstance(body, str) else json.dumps(body)
+    )
     return response
 
 
@@ -133,7 +136,7 @@ def test_build_authorization_url_scopes_the_page_to_brand_and_market():
 
 
 @pytest.mark.parametrize(
-    "language,market,expected",
+    ("language", "market", "expected"),
     [
         (None, "FR", "fr-FR"),
         ("en", "FR", "fr-FR"),
@@ -156,7 +159,15 @@ def test_sign_in_language(language, market, expected):
 
 async def test_exchange_code_stores_tokens():
     http = _session_returning(
-        _response(200, {"access_token": "at-1", "refresh_token": "rt-1", "id_token": _jwt({"sub": "s1"}), "expires_in": 3600})
+        _response(
+            200,
+            {
+                "access_token": "at-1",
+                "refresh_token": "rt-1",
+                "id_token": _jwt({"sub": "s1"}),
+                "expires_in": 3600,
+            },
+        )
     )
     session = MondialRelayOAuthSession(http)
     await session.async_exchange_code("code-1", "verifier-1")
@@ -198,7 +209,9 @@ async def test_get_access_token_without_refresh_token_raises():
 
 async def test_get_access_token_refreshes_when_stale():
     http = _session_returning(
-        _response(200, {"access_token": "at-2", "refresh_token": "rt-1", "expires_in": 3600})
+        _response(
+            200, {"access_token": "at-2", "refresh_token": "rt-1", "expires_in": 3600}
+        )
     )
     session = MondialRelayOAuthSession(http, refresh_token="rt-1")
     token = await session.async_get_access_token()
@@ -207,7 +220,9 @@ async def test_get_access_token_refreshes_when_stale():
 
 async def test_refresh_token_rotation_is_flagged_and_cleared():
     http = _session_returning(
-        _response(200, {"access_token": "at-2", "refresh_token": "rt-2", "expires_in": 3600})
+        _response(
+            200, {"access_token": "at-2", "refresh_token": "rt-2", "expires_in": 3600}
+        )
     )
     session = MondialRelayOAuthSession(http, refresh_token="rt-1")
     await session.async_get_access_token()
@@ -219,7 +234,9 @@ async def test_refresh_token_rotation_is_flagged_and_cleared():
 
 async def test_handle_unauthorized_forces_a_refresh():
     http = _session_returning(
-        _response(200, {"access_token": "at-3", "refresh_token": "rt-1", "expires_in": 3600})
+        _response(
+            200, {"access_token": "at-3", "refresh_token": "rt-1", "expires_in": 3600}
+        )
     )
     session = MondialRelayOAuthSession(http, refresh_token="rt-1")
     assert await session.async_handle_unauthorized() == "at-3"

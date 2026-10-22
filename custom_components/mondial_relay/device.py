@@ -5,6 +5,7 @@ One place, because sensors, the button and the calendar must all land on the
 entry title "Mondial Relay" (the plan's setup contract, so two accounts stay
 distinguishable only through the device name, not the entry title).
 """
+
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry

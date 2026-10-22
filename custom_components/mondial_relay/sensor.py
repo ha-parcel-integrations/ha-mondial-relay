@@ -1,8 +1,9 @@
 """Sensor platform for the Mondial Relay parcel tracker integration."""
+
 from __future__ import annotations
 
-import logging
 from datetime import datetime
+import logging
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -74,7 +75,7 @@ async def async_setup_entry(
             and entity_entry.unique_id.startswith(f"{entry_id}_")
             and entity_entry.unique_id not in non_parcel_unique_ids
         ):
-            barcode = entity_entry.unique_id[len(f"{entry_id}_"):]
+            barcode = entity_entry.unique_id[len(f"{entry_id}_") :]
             if barcode not in current_barcodes:
                 registry.async_remove(entity_entry.entity_id)
 
@@ -83,10 +84,10 @@ async def async_setup_entry(
             coordinator, entry, async_add_entities, current_barcodes
         ),
     ]
-    for parcel in _active_parcels(coordinator):
-        entities.append(
-            MondialRelayParcelSensor(coordinator, entry, parcel.get("barcode", ""))
-        )
+    entities.extend(
+        MondialRelayParcelSensor(coordinator, entry, parcel.get("barcode", ""))
+        for parcel in _active_parcels(coordinator)
+    )
     entities.append(MondialRelayNextDeliverySensor(coordinator, entry))
     entities.append(MondialRelayEnRouteToPickupPointSensor(coordinator, entry))
     entities.append(MondialRelayAwaitingPickupSensor(coordinator, entry))
@@ -163,7 +164,9 @@ class MondialRelayIncomingParcelsSensor(
         super()._handle_coordinator_update()
 
 
-class MondialRelayParcelSensor(CoordinatorEntity[MondialRelayCoordinator], SensorEntity):
+class MondialRelayParcelSensor(
+    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+):
     """Per-parcel sensor reporting the status of one tracked Mondial Relay parcel."""
 
     _attr_has_entity_name = True
@@ -286,7 +289,8 @@ class MondialRelayEnRouteToPickupPointSensor(_MondialRelayPickupListSensor):
 
     def _parcels(self) -> list[dict]:
         return [
-            parcel for parcel in (self.coordinator.data or [])
+            parcel
+            for parcel in (self.coordinator.data or [])
             if parcel.get("pickup")
             and parcel.get("status") != ParcelStatus.AT_PICKUP_POINT
         ]
@@ -300,7 +304,8 @@ class MondialRelayAwaitingPickupSensor(_MondialRelayPickupListSensor):
 
     def _parcels(self) -> list[dict]:
         return [
-            parcel for parcel in (self.coordinator.data or [])
+            parcel
+            for parcel in (self.coordinator.data or [])
             if parcel.get("status") == ParcelStatus.AT_PICKUP_POINT
         ]
 
