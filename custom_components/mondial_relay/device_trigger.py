@@ -11,11 +11,13 @@ from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEM
 from homeassistant.components.homeassistant.triggers import event as event_trigger
 from homeassistant.const import CONF_DEVICE_ID, CONF_DOMAIN, CONF_PLATFORM, CONF_TYPE
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
 from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
 from .const import DOMAIN
+from .source import is_tracking_entry
 
 # Device-trigger type -> bus event fired by the coordinator.
 TRIGGER_EVENTS = {
@@ -27,6 +29,12 @@ TRIGGER_EVENTS = {
     "outgoing_parcel_delivered": f"{DOMAIN}_outgoing_parcel_delivered",
 }
 TRIGGER_TYPES = set(TRIGGER_EVENTS)
+# A tracking hub follows incoming parcels only.
+INCOMING_TRIGGER_TYPES = {
+    trigger_type
+    for trigger_type in TRIGGER_TYPES
+    if not trigger_type.startswith("outgoing_")
+}
 
 TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
     {vol.Required(CONF_TYPE): vol.In(TRIGGER_TYPES)}
@@ -37,6 +45,14 @@ async def async_get_triggers(
     hass: HomeAssistant, device_id: str
 ) -> list[dict[str, str]]:
     """Return the list of parcel triggers for a Mondial Relay device."""
+    trigger_types = TRIGGER_TYPES
+    device = dr.async_get(hass).async_get(device_id)
+    if device is not None and any(
+        (entry := hass.config_entries.async_get_entry(entry_id)) is not None
+        and is_tracking_entry(entry)
+        for entry_id in device.config_entries
+    ):
+        trigger_types = INCOMING_TRIGGER_TYPES
     return [
         {
             CONF_PLATFORM: "device",
@@ -44,7 +60,7 @@ async def async_get_triggers(
             CONF_DEVICE_ID: device_id,
             CONF_TYPE: trigger_type,
         }
-        for trigger_type in TRIGGER_TYPES
+        for trigger_type in trigger_types
     ]
 
 

@@ -18,11 +18,11 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import MondialRelayConfigEntry
+from . import MondialRelayConfigEntry, MondialRelayParcelCoordinator
 from .const import DOMAIN, ParcelStatus
-from .coordinator import MondialRelayCoordinator
 from .device import ATTRIBUTION, build_device_info
-from .parcels import parse_iso
+from .parcel_lists import parse_iso
+from .source import is_tracking_entry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,12 +31,12 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 
-def _active_parcels(coordinator: MondialRelayCoordinator) -> list[dict]:
+def _active_parcels(coordinator: MondialRelayParcelCoordinator) -> list[dict]:
     """Every active parcel across both directions (incoming + outgoing)."""
     return list(coordinator.data or []) + list(coordinator.outgoing or [])
 
 
-def _active_barcodes(coordinator: MondialRelayCoordinator) -> set[str]:
+def _active_barcodes(coordinator: MondialRelayParcelCoordinator) -> set[str]:
     """Barcodes of every active parcel."""
     return {p.get("barcode", "") for p in _active_parcels(coordinator)}
 
@@ -92,15 +92,18 @@ async def async_setup_entry(
     entities.append(MondialRelayEnRouteToPickupPointSensor(coordinator, entry))
     entities.append(MondialRelayAwaitingPickupSensor(coordinator, entry))
     entities.append(MondialRelayDeliveredParcelsSensor(coordinator, entry))
-    entities.append(MondialRelayOutgoingParcelsSensor(coordinator, entry))
-    entities.append(MondialRelayOutgoingDeliveredSensor(coordinator, entry))
+    # A tracking hub follows incoming parcels only, so its outgoing lists
+    # would only ever count zero.
+    if not is_tracking_entry(entry):
+        entities.append(MondialRelayOutgoingParcelsSensor(coordinator, entry))
+        entities.append(MondialRelayOutgoingDeliveredSensor(coordinator, entry))
     entities.append(MondialRelayLastUpdateSensor(coordinator, entry))
 
     async_add_entities(entities)
 
 
 class MondialRelayIncomingParcelsSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Summary sensor: count of active (not-yet-delivered) incoming parcels.
 
@@ -117,7 +120,7 @@ class MondialRelayIncomingParcelsSensor(
 
     def __init__(
         self,
-        coordinator: MondialRelayCoordinator,
+        coordinator: MondialRelayParcelCoordinator,
         entry: ConfigEntry,
         async_add_entities: AddEntitiesCallback,
         known_barcodes: set[str] | None = None,
@@ -165,7 +168,7 @@ class MondialRelayIncomingParcelsSensor(
 
 
 class MondialRelayParcelSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Per-parcel sensor reporting the status of one tracked Mondial Relay parcel."""
 
@@ -175,7 +178,10 @@ class MondialRelayParcelSensor(
     _unrecorded_attributes = frozenset({"raw", "history"})
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry, barcode: str
+        self,
+        coordinator: MondialRelayParcelCoordinator,
+        entry: ConfigEntry,
+        barcode: str,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -205,7 +211,7 @@ class MondialRelayParcelSensor(
 
 
 class MondialRelayNextDeliverySensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Earliest expected delivery datetime across all active incoming parcels."""
 
@@ -215,7 +221,7 @@ class MondialRelayNextDeliverySensor(
     _attr_attribution = ATTRIBUTION
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -256,7 +262,7 @@ class MondialRelayNextDeliverySensor(
 
 
 class _MondialRelayPickupListSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Base for the canonical pickup-point summary views (incoming only)."""
 
@@ -267,7 +273,7 @@ class _MondialRelayPickupListSensor(
     _suffix: str
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{self._suffix}"
@@ -315,7 +321,7 @@ class MondialRelayAwaitingPickupSensor(_MondialRelayPickupListSensor):
 
 
 class MondialRelayDeliveredParcelsSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Recently delivered tracked Mondial Relay parcels (incoming)."""
 
@@ -326,7 +332,7 @@ class MondialRelayDeliveredParcelsSensor(
     _unrecorded_attributes = frozenset({"parcels"})
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -345,7 +351,7 @@ class MondialRelayDeliveredParcelsSensor(
 
 
 class MondialRelayOutgoingParcelsSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Active parcels this account sent."""
 
@@ -356,7 +362,7 @@ class MondialRelayOutgoingParcelsSensor(
     _unrecorded_attributes = frozenset({"parcels"})
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -375,7 +381,7 @@ class MondialRelayOutgoingParcelsSensor(
 
 
 class MondialRelayOutgoingDeliveredSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Recently delivered parcels this account sent."""
 
@@ -386,7 +392,7 @@ class MondialRelayOutgoingDeliveredSensor(
     _unrecorded_attributes = frozenset({"parcels"})
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -405,7 +411,7 @@ class MondialRelayOutgoingDeliveredSensor(
 
 
 class MondialRelayLastUpdateSensor(
-    CoordinatorEntity[MondialRelayCoordinator], SensorEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], SensorEntity
 ):
     """Diagnostic sensor reporting when Mondial Relay was last polled successfully."""
 
@@ -416,7 +422,7 @@ class MondialRelayLastUpdateSensor(
     _attr_attribution = ATTRIBUTION
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)

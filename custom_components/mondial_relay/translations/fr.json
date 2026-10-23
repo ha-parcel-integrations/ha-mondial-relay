@@ -4,9 +4,27 @@
     "step": {
       "user": {
         "title": "Configurer Mondial Relay",
+        "description": "Suivez les colis qui vous sont envoyés grâce à leur numéro de suivi, ou connectez-vous à un compte Mondial Relay.",
+        "menu_options": {
+          "account": "Compte",
+          "tracking": "Numéro de suivi"
+        }
+      },
+      "account": {
+        "title": "Configurer un compte Mondial Relay",
         "description": "Choisissez le pays dans lequel votre compte Mondial Relay est enregistré. Il détermine la page de connexion que vous obtenez et le numéro de téléphone qu'elle accepte.",
         "data": {
           "country": "Pays"
+        }
+      },
+      "tracking": {
+        "title": "Suivre des colis par numéro de suivi",
+        "description": "Aucun compte nécessaire — seulement le code postal auquel les colis sont adressés. Chaque colis ajouté à ce hub est recherché avec ce code postal. Ajoutez un autre hub pour un code postal différent.\n\nLes colis que vous envoyez ne sont pas suivis ici ; ils proviennent d'un hub de compte.",
+        "data": {
+          "postal_code": "Code postal"
+        },
+        "data_description": {
+          "postal_code": "Le code postal auquel le colis est adressé, écrit comme sur l'étiquette."
         }
       },
       "sign_in": {
@@ -30,10 +48,11 @@
       "parcels_unavailable": "Le compte est valide, mais Mondial Relay n'a pas communiqué sa liste de colis. La cause habituelle est un compte qui ne s'est jamais connecté sur le site ou l'application de Mondial Relay — faites-le une fois, puis recommencez la connexion ici. Si cela persiste, signalez-le avec l'avertissement enregistré sous custom_components.mondial_relay.",
       "account_rejected": "La connexion a fonctionné, mais le service de comptes de Mondial Relay a refusé la session qu'il venait d'émettre. La cause habituelle est un compte qui ne s'est jamais connecté sur le site ou l'application de Mondial Relay — faites-le une fois, puis recommencez la connexion ici. Si cela persiste, signalez-le avec l'avertissement enregistré sous custom_components.mondial_relay.",
       "invalid_redirect": "Cela ne ressemble pas à l'adresse vers laquelle la page de connexion vous a redirigé. Vérifiez que vous avez copié l'adresse entière après vous être connecté.",
-      "cannot_connect": "Impossible de joindre Mondial Relay. Veuillez réessayer."
+      "cannot_connect": "Impossible de joindre Mondial Relay. Veuillez réessayer.",
+      "invalid_postcode": "Saisissez le code postal auquel les colis sont adressés."
     },
     "abort": {
-      "already_configured": "Ce compte Mondial Relay est déjà configuré.",
+      "already_configured": "Ce compte Mondial Relay ou ce code postal est déjà configuré.",
       "reauth_successful": "Mondial Relay a été réauthentifié avec succès.",
       "wrong_account": "Cette connexion concerne un autre compte Mondial Relay. Connectez-vous avec le compte utilisé pour configurer cette entrée."
     }
@@ -63,6 +82,68 @@
               "include_history": "Réservé à une version future — le backend de compte de Mondial Relay n'expose pour l'instant aucun historique d'événements à afficher ici."
             }
           }
+        }
+      },
+      "tracking": {
+        "title": "Options Mondial Relay",
+        "menu_options": {
+          "parcels": "Colis",
+          "settings": "Paramètres"
+        }
+      },
+      "parcels": {
+        "title": "Gérer les colis",
+        "data": {
+          "tracking_codes": "Numéros de suivi"
+        },
+        "data_description": {
+          "tracking_codes": "Le(s) numéro(s) de suivi Mondial Relay, tel(s) qu'indiqué(s) dans la confirmation d'expédition. Recherché(s) avec le code postal de ce hub."
+        }
+      },
+      "settings": {
+        "title": "Paramètres",
+        "data": {
+          "delivered_filter_type": "Colis livrés : filtrer par",
+          "delivered_filter_amount": "Colis livrés : quantité",
+          "include_history": "Inclure l'historique des statuts"
+        },
+        "data_description": {
+          "delivered_filter_type": "Afficher les colis livrés des X derniers jours, ou se limiter aux X plus récents.",
+          "delivered_filter_amount": "Nombre de jours ou de colis à afficher.",
+          "include_history": "Ajoute les événements de suivi de chaque colis à son capteur."
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_code": "Saisissez au moins un numéro de suivi."
+    }
+  },
+  "services": {
+    "track_parcel": {
+      "name": "Suivre un colis",
+      "description": "Commencer à suivre un colis sur un hub de suivi Mondial Relay grâce à son numéro de suivi.",
+      "fields": {
+        "tracking_code": {
+          "name": "Numéro de suivi",
+          "description": "Le numéro de suivi Mondial Relay."
+        },
+        "postal_code": {
+          "name": "Code postal",
+          "description": "À quel hub de suivi l'ajouter, si plusieurs sont configurés. À omettre s'il n'en existe qu'un."
+        }
+      }
+    },
+    "untrack_parcel": {
+      "name": "Ne plus suivre un colis",
+      "description": "Arrêter de suivre un colis sur un hub de suivi Mondial Relay.",
+      "fields": {
+        "tracking_code": {
+          "name": "Numéro de suivi",
+          "description": "Le numéro de suivi Mondial Relay à ne plus suivre."
+        },
+        "postal_code": {
+          "name": "Code postal",
+          "description": "Le retirer uniquement du hub de suivi de ce code postal. À omettre pour le retirer de tous les hubs de suivi."
         }
       }
     }

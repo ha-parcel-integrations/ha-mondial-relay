@@ -7,11 +7,12 @@ from homeassistant.config_entries import SOURCE_USER
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.mondial_relay.api import (
+from custom_components.mondial_relay.account.api import (
     MondialRelayApiError,
     MondialRelayAuthError,
     MondialRelaySigningRejectedError,
 )
+from custom_components.mondial_relay.account.oauth import MondialRelayOAuthAuthError
 from custom_components.mondial_relay.config_flow import MondialRelayConfigFlow
 from custom_components.mondial_relay.const import (
     CONF_ACCOUNT_SUBJECT,
@@ -22,10 +23,14 @@ from custom_components.mondial_relay.const import (
     CONF_DEVICE_UID,
     CONF_INCLUDE_HISTORY,
     CONF_MARKET,
+    CONF_PARCELS,
+    CONF_POSTAL_CODE,
     CONF_REFRESH_TOKEN,
+    CONF_SOURCE,
+    CONF_TRACKING_CODE,
     DOMAIN,
+    SOURCE_TRACKING,
 )
-from custom_components.mondial_relay.oauth import MondialRelayOAuthAuthError
 
 OAUTH_CLASS = "custom_components.mondial_relay.config_flow.MondialRelayOAuthSession"
 CLIENT_CLASS = "custom_components.mondial_relay.config_flow.MondialRelayApiClient"
@@ -53,9 +58,12 @@ def _fake_oauth(*, exchange_side_effect=None) -> MagicMock:
 
 
 async def _start(hass, country: str = "fr"):
-    """Init the flow and answer the country step, landing on ``sign_in``."""
+    """Pick the account branch and answer its country step, landing on ``sign_in``."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "account"}
     )
     return await hass.config_entries.flow.async_configure(
         result["flow_id"], {CONF_COUNTRY: country}
@@ -100,12 +108,25 @@ def _entry(subject: str = "subject-1") -> MockConfigEntry:
 # ---------------------------------------------------------------------------
 
 
-async def test_user_flow_asks_for_the_country_first(hass):
+async def test_user_flow_starts_with_a_menu_of_both_kinds_of_hub(hass):
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert result["type"] == "menu"
+    assert result["step_id"] == "user"
+    assert result["menu_options"] == ["account", "tracking"]
+
+
+async def test_account_branch_asks_for_the_country_first(hass):
     """The sign-in link cannot be built before the market is known."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
-    assert result["step_id"] == "user"
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "account"}
+    )
+    assert result["type"] == "form"
+    assert result["step_id"] == "account"
 
 
 async def test_user_flow_shows_authorize_url(hass):
@@ -300,8 +321,8 @@ async def test_country_step_rebuilds_the_link_when_the_answer_changes(hass):
     flow.handler = DOMAIN
     oauth = _fake_oauth()
     with patch(OAUTH_CLASS, return_value=oauth):
-        await flow.async_step_user({CONF_COUNTRY: "fr"})
-        await flow.async_step_user({CONF_COUNTRY: "be"})
+        await flow.async_step_account({CONF_COUNTRY: "fr"})
+        await flow.async_step_account({CONF_COUNTRY: "be"})
     markets = [
         call.kwargs["market"] for call in oauth.build_authorization_url.call_args_list
     ]
@@ -424,3 +445,159 @@ async def test_options_flow_saves_and_reloads(hass):
         CONF_INCLUDE_HISTORY: True,
     }
     schedule_reload.assert_called_once_with(entry.entry_id)
+
+
+async def test_account_options_show_the_sectioned_form_not_the_parcel_menu(hass):
+    entry = _entry()
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == "form"
+    assert set(result["data_schema"].schema) == {"delivered", "history"}
+
+
+# ---------------------------------------------------------------------------
+# tracking hubs
+# ---------------------------------------------------------------------------
+
+
+async def _start_tracking(hass):
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "tracking"}
+    )
+
+
+async def test_tracking_step_asks_only_for_the_postcode(hass):
+    result = await _start_tracking(hass)
+    assert result["type"] == "form"
+    assert result["step_id"] == "tracking"
+    assert set(result["data_schema"].schema) == {CONF_POSTAL_CODE}
+
+
+async def test_tracking_step_stores_the_postcode_stripped_but_verbatim(hass):
+    with patch(CLIENT_CLASS) as account_client, patch(OAUTH_CLASS) as oauth:
+        result = await _start_tracking(hass)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_POSTAL_CODE: " 1234 ab "}
+        )
+    # Setting a tracking hub up makes no network call.
+    account_client.assert_not_called()
+    oauth.assert_not_called()
+
+    assert result["type"] == "create_entry"
+    assert result["title"] == "Mondial Relay (1234 ab)"
+    assert result["data"] == {CONF_SOURCE: SOURCE_TRACKING}
+    assert result["options"][CONF_POSTAL_CODE] == "1234 ab"
+    assert result["options"][CONF_PARCELS] == []
+    assert result["result"].unique_id == "tracking:1234 ab"
+
+
+async def test_tracking_step_refuses_an_empty_postcode(hass):
+    result = await _start_tracking(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_POSTAL_CODE: "   "}
+    )
+    assert result["type"] == "form"
+    assert result["errors"] == {CONF_POSTAL_CODE: "invalid_postcode"}
+
+
+async def test_tracking_step_aborts_on_a_duplicate_postcode(hass):
+    _tracking_entry().add_to_hass(hass)
+    result = await _start_tracking(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_POSTAL_CODE: "1000"}
+    )
+    assert result["type"] == "abort"
+    assert result["reason"] == "already_configured"
+
+
+def _tracking_entry(codes=()) -> MockConfigEntry:
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="Mondial Relay (1000)",
+        unique_id="tracking:1000",
+        data={CONF_SOURCE: SOURCE_TRACKING},
+        options={
+            CONF_POSTAL_CODE: "1000",
+            CONF_PARCELS: [{CONF_TRACKING_CODE: code} for code in codes],
+            CONF_DELIVERED_FILTER_TYPE: "days",
+            CONF_DELIVERED_FILTER_AMOUNT: 7,
+            CONF_INCLUDE_HISTORY: False,
+        },
+    )
+
+
+async def test_tracking_options_offer_parcels_and_settings_only(hass):
+    entry = _tracking_entry()
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == "menu"
+    assert result["menu_options"] == ["parcels", "settings"]
+
+
+async def test_tracking_options_edit_the_parcel_list_without_a_reload(hass):
+    entry = _tracking_entry(codes=("12345678",))
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "parcels"}
+    )
+    assert result["step_id"] == "parcels"
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {"tracking_codes": [" 1234567890 ", "12345678", "", "1234567890"]},
+        )
+    reload.assert_not_called()
+    assert result["type"] == "create_entry"
+    assert result["data"][CONF_PARCELS] == [
+        {CONF_TRACKING_CODE: "1234567890"},
+        {CONF_TRACKING_CODE: "12345678"},
+    ]
+    assert result["data"][CONF_POSTAL_CODE] == "1000"
+
+
+async def test_tracking_options_refuse_an_invalid_code(hass, monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.mondial_relay.config_flow.valid_tracking_code",
+        lambda code: False,
+    )
+    entry = _tracking_entry()
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "parcels"}
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"tracking_codes": ["12345678"]}
+    )
+    assert result["errors"] == {"base": "invalid_tracking_code"}
+
+
+async def test_tracking_settings_keep_the_parcels_and_postcode(hass):
+    entry = _tracking_entry(codes=("12345678",))
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "settings"}
+    )
+    assert result["step_id"] == "settings"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_DELIVERED_FILTER_TYPE: "parcels",
+            CONF_DELIVERED_FILTER_AMOUNT: 3,
+            CONF_INCLUDE_HISTORY: True,
+        },
+    )
+    assert result["type"] == "create_entry"
+    assert result["data"] == {
+        CONF_POSTAL_CODE: "1000",
+        CONF_PARCELS: [{CONF_TRACKING_CODE: "12345678"}],
+        CONF_DELIVERED_FILTER_TYPE: "parcels",
+        CONF_DELIVERED_FILTER_AMOUNT: 3,
+        CONF_INCLUDE_HISTORY: True,
+    }

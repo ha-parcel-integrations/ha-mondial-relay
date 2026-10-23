@@ -1,13 +1,24 @@
 """Tests for Mondial Relay diagnostics."""
 
 from datetime import timedelta
+import json
 from unittest.mock import MagicMock
 
+from custom_components.mondial_relay.const import (
+    CONF_PARCELS,
+    CONF_POSTAL_CODE,
+    CONF_SOURCE,
+    CONF_TRACKING_CODE,
+    SOURCE_TRACKING,
+    TRACKING_PAGE_BE_NL,
+)
 from custom_components.mondial_relay.diagnostics import (
     async_get_config_entry_diagnostics,
 )
+from custom_components.mondial_relay.tracking.parcels import normalize_parcel
 
 from .payloads import list_item
+from .tracking.payloads import delivered
 
 
 async def test_diagnostics_redacts_and_counts(hass):
@@ -100,3 +111,57 @@ async def test_diagnostics_covers_outgoing_lists(hass):
 
     assert result["counts"]["outgoing_active"] == 1
     assert result["outgoing"][0]["barcode"] == "**REDACTED**"
+
+
+async def test_tracking_hub_diagnostics_redact_the_postcode_and_addresses(hass):
+    parcel = normalize_parcel(delivered(), page=TRACKING_PAGE_BE_NL)
+    entry = MagicMock()
+    entry.title = "Mondial Relay (9999)"
+    entry.data = {CONF_SOURCE: SOURCE_TRACKING}
+    entry.options = {
+        CONF_POSTAL_CODE: "9999",
+        CONF_PARCELS: [{CONF_TRACKING_CODE: "12345678"}],
+    }
+    entry.runtime_data.coordinator.current_tier_minutes = None
+    entry.runtime_data.coordinator.update_interval = None
+    entry.runtime_data.coordinator.data = []
+    entry.runtime_data.coordinator.delivered = [parcel]
+    entry.runtime_data.coordinator.outgoing = []
+    entry.runtime_data.coordinator.delivered_outgoing = []
+    entry.runtime_data.coordinator.delivered_codes = {"12345678"}
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+    text = json.dumps(result)
+
+    assert result["entry_title"] == "**REDACTED**"
+    assert result["entry_options"][CONF_POSTAL_CODE] == "**REDACTED**"
+    assert result["entry_options"][CONF_PARCELS] == [
+        {CONF_TRACKING_CODE: "**REDACTED**"}
+    ]
+    assert result["counts"]["skipped_from_fetch"] == 1
+    assert result["polling"]["update_interval_seconds"] is None
+    raw = result["delivered"][0]["raw"]
+    assert raw["Numero"] == "**REDACTED**"
+    assert raw["DestinataireCodePostal"] == "**REDACTED**"
+    assert result["delivered"][0]["url"] == "**REDACTED**"
+    for value in ("9999", "12345678", "Teststraat", "Testlaan", "TEST SHOP"):
+        assert value not in text
+    # what explains a status survives
+    assert raw["SuiviParEtapes"]["5"]["Evenement"]
+    assert raw["DeliveryMode"] == "24R"
+
+
+async def test_account_diagnostics_keep_their_literal_title(hass):
+    entry = MagicMock()
+    entry.title = "Mondial Relay"
+    entry.data = {}
+    entry.options = {}
+    entry.runtime_data.coordinator.update_interval = None
+    entry.runtime_data.coordinator.data = []
+    entry.runtime_data.coordinator.delivered = []
+    entry.runtime_data.coordinator.outgoing = []
+    entry.runtime_data.coordinator.delivered_outgoing = []
+    entry.runtime_data.coordinator.delivered_codes = set()
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+    assert result["entry_title"] == "Mondial Relay"

@@ -4,9 +4,27 @@
     "step": {
       "user": {
         "title": "Set up Mondial Relay",
+        "description": "Follow parcels sent to you by their tracking code, or sign in to a Mondial Relay account.",
+        "menu_options": {
+          "account": "Account",
+          "tracking": "Tracking code"
+        }
+      },
+      "account": {
+        "title": "Set up a Mondial Relay account",
         "description": "Choose the country your Mondial Relay account is registered in. It decides which sign-in page you get, and the phone number it accepts.",
         "data": {
           "country": "Country"
+        }
+      },
+      "tracking": {
+        "title": "Track parcels by tracking code",
+        "description": "No account needed — just the postcode the parcels are addressed to. Every parcel you add to this hub is looked up with it. Add another hub for a different postcode.\n\nParcels you send are not followed here; they come from an account hub.",
+        "data": {
+          "postal_code": "Postcode"
+        },
+        "data_description": {
+          "postal_code": "The postcode the parcel is addressed to, written as on the label."
         }
       },
       "sign_in": {
@@ -30,10 +48,11 @@
       "parcels_unavailable": "The account is valid, but Mondial Relay would not release its parcel list. The usual cause is an account that has never signed in on Mondial Relay's own site or app — do that once, then repeat the sign-in here. If it keeps happening, please report it with the warning logged under custom_components.mondial_relay.",
       "account_rejected": "Signing in worked, but Mondial Relay's account service refused the session it had just issued. The usual cause is an account that has never signed in on Mondial Relay's own site or app — do that once, then repeat the sign-in here. If it keeps happening, please report it with the warning logged under custom_components.mondial_relay.",
       "invalid_redirect": "That does not look like the address the sign-in page redirected you to. Make sure you copied the whole thing after signing in.",
-      "cannot_connect": "Could not reach Mondial Relay. Please try again."
+      "cannot_connect": "Could not reach Mondial Relay. Please try again.",
+      "invalid_postcode": "Enter the postcode the parcels are addressed to."
     },
     "abort": {
-      "already_configured": "That Mondial Relay account is already set up.",
+      "already_configured": "That Mondial Relay account or postcode is already set up.",
       "reauth_successful": "Mondial Relay was reauthenticated successfully.",
       "wrong_account": "That sign-in was for a different Mondial Relay account. Sign in with the account this entry was set up for."
     }
@@ -63,6 +82,68 @@
               "include_history": "Reserved for a future release — Mondial Relay's account backend currently has no per-event timeline to show here."
             }
           }
+        }
+      },
+      "tracking": {
+        "title": "Mondial Relay options",
+        "menu_options": {
+          "parcels": "Parcels",
+          "settings": "Settings"
+        }
+      },
+      "parcels": {
+        "title": "Manage parcels",
+        "data": {
+          "tracking_codes": "Tracking codes"
+        },
+        "data_description": {
+          "tracking_codes": "The Mondial Relay tracking code(s), as in the shipping confirmation. Looked up with this hub's postcode."
+        }
+      },
+      "settings": {
+        "title": "Settings",
+        "data": {
+          "delivered_filter_type": "Delivered parcels: filter by",
+          "delivered_filter_amount": "Delivered parcels: amount",
+          "include_history": "Include status history"
+        },
+        "data_description": {
+          "delivered_filter_type": "Show delivered parcels from the last X days, or limit to the X most recent.",
+          "delivered_filter_amount": "Number of days or parcels to show.",
+          "include_history": "Adds each parcel's tracking events to its sensor."
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_code": "Enter at least one tracking code."
+    }
+  },
+  "services": {
+    "track_parcel": {
+      "name": "Track parcel",
+      "description": "Start tracking a parcel on a Mondial Relay tracking hub by its tracking code.",
+      "fields": {
+        "tracking_code": {
+          "name": "Tracking code",
+          "description": "The Mondial Relay tracking code."
+        },
+        "postal_code": {
+          "name": "Postcode",
+          "description": "Which tracking hub to add it to, if more than one is set up. Omit it when only one exists."
+        }
+      }
+    },
+    "untrack_parcel": {
+      "name": "Untrack parcel",
+      "description": "Stop tracking a parcel on a Mondial Relay tracking hub.",
+      "fields": {
+        "tracking_code": {
+          "name": "Tracking code",
+          "description": "The Mondial Relay tracking code to stop tracking."
+        },
+        "postal_code": {
+          "name": "Postcode",
+          "description": "Only remove it from the tracking hub for this postcode. Omit it to remove it from every tracking hub."
         }
       }
     }

@@ -11,10 +11,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from . import MondialRelayConfigEntry
-from .coordinator import MondialRelayCoordinator
+from . import MondialRelayConfigEntry, MondialRelayParcelCoordinator
 from .device import ATTRIBUTION, build_device_info
-from .parcels import parse_iso
+from .parcel_lists import parse_iso
 
 PARALLEL_UPDATES = 0
 
@@ -33,7 +32,7 @@ async def async_setup_entry(
 
 
 class MondialRelayDeliveriesCalendar(
-    CoordinatorEntity[MondialRelayCoordinator], CalendarEntity
+    CoordinatorEntity[MondialRelayParcelCoordinator], CalendarEntity
 ):
     """A read-only calendar of expected Mondial Relay deliveries.
 
@@ -47,7 +46,7 @@ class MondialRelayDeliveriesCalendar(
     _attr_attribution = ATTRIBUTION
 
     def __init__(
-        self, coordinator: MondialRelayCoordinator, entry: ConfigEntry
+        self, coordinator: MondialRelayParcelCoordinator, entry: ConfigEntry
     ) -> None:
         """Initialize the calendar."""
         super().__init__(coordinator)

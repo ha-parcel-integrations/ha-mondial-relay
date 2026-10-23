@@ -4,9 +4,27 @@
     "step": {
       "user": {
         "title": "Mondial Relay instellen",
+        "description": "Volg pakketten die naar je verstuurd worden met hun trackingcode, of meld je aan met een Mondial Relay-account.",
+        "menu_options": {
+          "account": "Account",
+          "tracking": "Trackingcode"
+        }
+      },
+      "account": {
+        "title": "Een Mondial Relay-account instellen",
         "description": "Kies het land waar je Mondial Relay-account geregistreerd is. Dat bepaalt welke inlogpagina je krijgt en welk telefoonnummer die accepteert.",
         "data": {
           "country": "Land"
+        }
+      },
+      "tracking": {
+        "title": "Pakketten volgen met een trackingcode",
+        "description": "Geen account nodig — alleen de postcode waar de pakketten naartoe gaan. Elk pakket dat je aan deze hub toevoegt, wordt daarmee opgezocht. Voeg een extra hub toe voor een andere postcode.\n\nPakketten die je zelf verstuurt worden hier niet gevolgd; die komen uit een account-hub.",
+        "data": {
+          "postal_code": "Postcode"
+        },
+        "data_description": {
+          "postal_code": "De postcode waar het pakket naartoe gaat, geschreven zoals op het label."
         }
       },
       "sign_in": {
@@ -30,10 +48,11 @@
       "parcels_unavailable": "Het account is geldig, maar Mondial Relay gaf de pakketlijst niet vrij. Meestal komt dat doordat het account zich nog nooit op de site of in de app van Mondial Relay heeft aangemeld — doe dat één keer en herhaal daarna het aanmelden hier. Blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
       "account_rejected": "Het aanmelden lukte, maar de accountservice van Mondial Relay weigerde de sessie die hij net zelf had uitgegeven. Meestal komt dat doordat het account zich nog nooit op de site of in de app van Mondial Relay heeft aangemeld — doe dat één keer en herhaal daarna het aanmelden hier. Blijft het gebeuren, meld het dan met de waarschuwing die onder custom_components.mondial_relay in het log staat.",
       "invalid_redirect": "Dat lijkt niet op het adres waar de aanmeldpagina je naartoe stuurde. Zorg dat je de hele URL na het aanmelden hebt gekopieerd.",
-      "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw."
+      "cannot_connect": "Kon Mondial Relay niet bereiken. Probeer het opnieuw.",
+      "invalid_postcode": "Vul de postcode in waar de pakketten naartoe gaan."
     },
     "abort": {
-      "already_configured": "Dat Mondial Relay-account is al ingesteld.",
+      "already_configured": "Dat Mondial Relay-account of die postcode is al ingesteld.",
       "reauth_successful": "Mondial Relay is opnieuw geverifieerd.",
       "wrong_account": "Die aanmelding hoort bij een ander Mondial Relay-account. Meld je aan met het account waarvoor deze integratie is ingesteld."
     }
@@ -63,6 +82,68 @@
               "include_history": "Gereserveerd voor een latere release — het accountsysteem van Mondial Relay heeft momenteel geen tijdlijn per gebeurtenis om hier te tonen."
             }
           }
+        }
+      },
+      "tracking": {
+        "title": "Mondial Relay-opties",
+        "menu_options": {
+          "parcels": "Pakketten",
+          "settings": "Instellingen"
+        }
+      },
+      "parcels": {
+        "title": "Pakketten beheren",
+        "data": {
+          "tracking_codes": "Trackingcodes"
+        },
+        "data_description": {
+          "tracking_codes": "De trackingcode(s) van Mondial Relay, zoals in de verzendbevestiging. Wordt opgezocht met de postcode van deze hub."
+        }
+      },
+      "settings": {
+        "title": "Instellingen",
+        "data": {
+          "delivered_filter_type": "Bezorgde pakketten: filteren op",
+          "delivered_filter_amount": "Bezorgde pakketten: aantal",
+          "include_history": "Statusgeschiedenis toevoegen"
+        },
+        "data_description": {
+          "delivered_filter_type": "Toon bezorgde pakketten van de laatste X dagen, of beperk tot de X meest recente.",
+          "delivered_filter_amount": "Aantal dagen of pakketten om te tonen.",
+          "include_history": "Voegt de trackinggebeurtenissen van elk pakket toe aan de sensor."
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_code": "Vul minstens één trackingcode in."
+    }
+  },
+  "services": {
+    "track_parcel": {
+      "name": "Pakket volgen",
+      "description": "Begin met het volgen van een pakket op een Mondial Relay-trackinghub via de trackingcode.",
+      "fields": {
+        "tracking_code": {
+          "name": "Trackingcode",
+          "description": "De trackingcode van Mondial Relay."
+        },
+        "postal_code": {
+          "name": "Postcode",
+          "description": "Aan welke trackinghub het pakket toegevoegd wordt, als er meer dan één is ingesteld. Laat leeg als er maar één is."
+        }
+      }
+    },
+    "untrack_parcel": {
+      "name": "Pakket niet meer volgen",
+      "description": "Stop met het volgen van een pakket op een Mondial Relay-trackinghub.",
+      "fields": {
+        "tracking_code": {
+          "name": "Trackingcode",
+          "description": "De trackingcode van Mondial Relay die je niet meer wilt volgen."
+        },
+        "postal_code": {
+          "name": "Postcode",
+          "description": "Verwijder het alleen van de trackinghub voor deze postcode. Laat leeg om het van elke trackinghub te verwijderen."
         }
       }
     }

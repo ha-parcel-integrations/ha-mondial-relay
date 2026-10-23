@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import aiohttp
 import pytest
 
-from custom_components.mondial_relay.oauth import (
+from custom_components.mondial_relay.account.oauth import (
     MondialRelayOAuthAuthError,
     MondialRelayOAuthError,
     MondialRelayOAuthSession,
