@@ -8,7 +8,14 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.core import HomeAssistant
 
 from . import MondialRelayConfigEntry
-from .const import CONF_ACCOUNT_SUBJECT, CONF_DEVICE_UID, CONF_REFRESH_TOKEN
+from .const import (
+    CONF_ACCOUNT_SUBJECT,
+    CONF_DEVICE_UID,
+    CONF_POSTAL_CODE,
+    CONF_REFRESH_TOKEN,
+    CONF_TRACKING_CODE,
+)
+from .source import is_tracking_entry
 
 # Diagnostics are pasted into public issues, so redact anything that
 # identifies a person, an account, a device or a specific shipment.
@@ -18,6 +25,8 @@ TO_REDACT = {
     CONF_REFRESH_TOKEN,
     CONF_ACCOUNT_SUBJECT,
     CONF_DEVICE_UID,
+    CONF_POSTAL_CODE,
+    CONF_TRACKING_CODE,
     # canonical fields we publish ourselves
     "barcode",
     "sender",
@@ -39,6 +48,12 @@ TO_REDACT = {
     "country",
     "deadline",
     "deliveryPointId",
+    # tracking payload under raw; a tracking hub's own postcode included
+    "Numero",
+    "DestinataireCodePostal",
+    "DetailPointRelais",
+    "Adresse",
+    "Telephone",
 }
 
 
@@ -49,6 +64,8 @@ async def async_get_config_entry_diagnostics(
     coordinator = entry.runtime_data.coordinator
 
     return {
+        # A tracking hub's title carries its postcode.
+        "entry_title": "**REDACTED**" if is_tracking_entry(entry) else entry.title,
         "entry_data": async_redact_data(dict(entry.data), TO_REDACT),
         "entry_options": async_redact_data(dict(entry.options), TO_REDACT),
         "counts": {

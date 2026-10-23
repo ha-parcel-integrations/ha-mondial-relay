@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import aiohttp
 import pytest
 
-from custom_components.mondial_relay.api import (
+from custom_components.mondial_relay.account.api import (
     MondialRelayApiClient,
     MondialRelayApiError,
     MondialRelayAuthError,
@@ -14,10 +14,9 @@ from custom_components.mondial_relay.api import (
     account_type,
     has_confirmed_phone,
 )
+from custom_components.mondial_relay.account.oauth import MondialRelayOAuthError
 from custom_components.mondial_relay.const import USER_AGENT
-from custom_components.mondial_relay.oauth import MondialRelayOAuthError
-
-from .payloads import active_item, list_envelope
+from tests.payloads import active_item, list_envelope
 
 DEVICE_UID = "device-abc"
 USER_INFO = {

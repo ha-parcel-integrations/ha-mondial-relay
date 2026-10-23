@@ -35,15 +35,56 @@ KNOWN_CAPABILITIES = frozenset(
     {"weight", "dimensions", "delivery_window", "pickup_point", "url", "history"}
 )
 
-# Empty on purpose: every optional field this integration could someday
-# populate — pickup point, ETA, weight/dimensions, a tracking URL, history — is
-# still null on every parcel. Add an entry here only once a normalizer field is
-# proven non-null against a real, consented account fixture.
-CAPABILITIES: frozenset[str] = frozenset()
+# One frozenset per source, because the two backends populate different
+# fields. The account stays empty on purpose: every optional field it could
+# someday populate is still null on every parcel, until a real, consented
+# account fixture proves otherwise. The tracking source fills the delivery
+# window, the tracking url and the event history from its own response.
+# Keep in sync with both normalisers.
+CAPABILITIES_BY_VARIANT = {
+    "Account": frozenset[str](),
+    "Tracking": frozenset({"delivery_window", "url", "history"}),
+}
 
 # Fields not confirmed yet — the docs site shows them as "awaiting data".
 # Move a field into the declaration above once a real parcel shows it.
-PENDING_CAPABILITIES = frozenset({"pickup_point", "history"})
+PENDING_CAPABILITIES_BY_VARIANT = {
+    "Account": frozenset({"pickup_point", "history"}),
+    "Tracking": frozenset({"pickup_point"}),
+}
+CAPABILITIES = CAPABILITIES_BY_VARIANT["Account"]
+PENDING_CAPABILITIES = PENDING_CAPABILITIES_BY_VARIANT["Account"]
+
+# Which kind of hub an entry is. Entries from before tracking hubs existed
+# carry no source at all and are account hubs, so every read defaults to
+# SOURCE_ACCOUNT.
+CONF_SOURCE = "source"
+SOURCE_ACCOUNT = "account"
+SOURCE_TRACKING = "tracking"
+
+# A tracking hub is one postcode; each parcel in it needs only its code.
+CONF_POSTAL_CODE = "postal_code"
+CONF_PARCELS = "parcels"
+CONF_TRACKING_CODE = "tracking_code"
+
+# Mondial Relay's public tracking. The host is fixed: .be and .nl return the
+# same data, the lookup ignores the country, and .fr refuses scripted clients.
+TRACKING_HOST = "https://www.mondialrelay.be"
+TRACKING_PAGE_PATH = "/nl-be/shipment-tracking"
+TRACKING_API_PATH = "/api/tracking"
+# suite: allow browser user-agent (the public tracking refuses a plain client)
+TRACKING_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+)
+
+# The page a parcel's ``url`` opens, by Home Assistant's own country and
+# language. Spain and Portugal fall through to Belgium on purpose: those
+# markets no longer have a Mondial Relay site of their own.
+TRACKING_PAGE_NL = "https://www.mondialrelay.nl/shipment-tracking"
+TRACKING_PAGE_BE_FR = "https://www.mondialrelay.be/fr-be/suivi-de-colis/"
+TRACKING_PAGE_BE_NL = "https://www.mondialrelay.be/nl-be/shipment-tracking"
+TRACKING_PAGE_FR = "https://www.mondialrelay.fr/suivi-de-colis/"
 
 # InPost Group public OAuth/PKCE client the official app authenticates with.
 MR_OAUTH_AUTHORIZE_URL = "https://account.inpost-group.com/oauth2/authorize"

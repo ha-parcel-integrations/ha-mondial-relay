@@ -4,9 +4,27 @@
     "step": {
       "user": {
         "title": "Configurar Mondial Relay",
+        "description": "Acompanhe as encomendas enviadas para si pelo número de seguimento, ou inicie sessão numa conta Mondial Relay.",
+        "menu_options": {
+          "account": "Conta",
+          "tracking": "Número de seguimento"
+        }
+      },
+      "account": {
+        "title": "Configurar uma conta Mondial Relay",
         "description": "Escolhe o país onde a tua conta Mondial Relay está registada. É o que determina a página de início de sessão que recebes e o número de telefone que ela aceita.",
         "data": {
           "country": "País"
+        }
+      },
+      "tracking": {
+        "title": "Acompanhar encomendas pelo número de seguimento",
+        "description": "Não precisa de conta — apenas do código postal para onde as encomendas são enviadas. Cada encomenda que adicionar a este hub é consultada com ele. Adicione outro hub para um código postal diferente.\n\nAs encomendas que envia não são acompanhadas aqui; essas vêm de um hub de conta.",
+        "data": {
+          "postal_code": "Código postal"
+        },
+        "data_description": {
+          "postal_code": "O código postal para onde a encomenda é enviada, escrito como na etiqueta."
         }
       },
       "sign_in": {
@@ -30,10 +48,11 @@
       "parcels_unavailable": "A conta é válida, mas a Mondial Relay não disponibilizou a lista de encomendas. Normalmente isso acontece com contas que nunca iniciaram sessão no site ou na aplicação da Mondial Relay — faz isso uma vez e repete aqui o início de sessão. Se continuar a acontecer, reporta-o com o aviso registado em custom_components.mondial_relay.",
       "account_rejected": "O início de sessão funcionou, mas o serviço de contas da Mondial Relay recusou a sessão que acabara de emitir. Normalmente isso acontece com contas que nunca iniciaram sessão no site ou na aplicação da Mondial Relay — faz isso uma vez e repete aqui o início de sessão. Se continuar a acontecer, reporta-o com o aviso registado em custom_components.mondial_relay.",
       "invalid_redirect": "Isso não parece o endereço para onde a página de início de sessão te encaminhou. Confirma que copiaste o endereço completo depois de iniciar sessão.",
-      "cannot_connect": "Não foi possível contactar a Mondial Relay. Tente novamente."
+      "cannot_connect": "Não foi possível contactar a Mondial Relay. Tente novamente.",
+      "invalid_postcode": "Introduza o código postal para onde as encomendas são enviadas."
     },
     "abort": {
-      "already_configured": "Esta conta Mondial Relay já está configurada.",
+      "already_configured": "Esta conta Mondial Relay ou este código postal já está configurado.",
       "reauth_successful": "A reautenticação da Mondial Relay foi bem-sucedida.",
       "wrong_account": "Esse início de sessão pertence a outra conta Mondial Relay. Inicie sessão com a conta com que esta entrada foi configurada."
     }
@@ -63,6 +82,68 @@
               "include_history": "Reservado para uma versão futura — o backend de conta da Mondial Relay não tem, por agora, um histórico de eventos para mostrar aqui."
             }
           }
+        }
+      },
+      "tracking": {
+        "title": "Opções do Mondial Relay",
+        "menu_options": {
+          "parcels": "Encomendas",
+          "settings": "Definições"
+        }
+      },
+      "parcels": {
+        "title": "Gerir encomendas",
+        "data": {
+          "tracking_codes": "Números de seguimento"
+        },
+        "data_description": {
+          "tracking_codes": "O(s) número(s) de seguimento Mondial Relay, como na confirmação de envio. Consultado(s) com o código postal deste hub."
+        }
+      },
+      "settings": {
+        "title": "Definições",
+        "data": {
+          "delivered_filter_type": "Encomendas entregues: filtrar por",
+          "delivered_filter_amount": "Encomendas entregues: quantidade",
+          "include_history": "Incluir histórico de estados"
+        },
+        "data_description": {
+          "delivered_filter_type": "Mostrar encomendas entregues dos últimos X dias, ou limitar às X mais recentes.",
+          "delivered_filter_amount": "Número de dias ou de encomendas a mostrar.",
+          "include_history": "Adiciona os eventos de seguimento de cada encomenda ao respetivo sensor."
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_code": "Introduza pelo menos um número de seguimento."
+    }
+  },
+  "services": {
+    "track_parcel": {
+      "name": "Acompanhar encomenda",
+      "description": "Começar a acompanhar uma encomenda num hub de seguimento Mondial Relay pelo número de seguimento.",
+      "fields": {
+        "tracking_code": {
+          "name": "Número de seguimento",
+          "description": "O número de seguimento Mondial Relay."
+        },
+        "postal_code": {
+          "name": "Código postal",
+          "description": "A que hub de seguimento a adicionar, se houver mais do que um configurado. Omita-o se só existir um."
+        }
+      }
+    },
+    "untrack_parcel": {
+      "name": "Deixar de acompanhar encomenda",
+      "description": "Deixar de acompanhar uma encomenda num hub de seguimento Mondial Relay.",
+      "fields": {
+        "tracking_code": {
+          "name": "Número de seguimento",
+          "description": "O número de seguimento Mondial Relay a deixar de acompanhar."
+        },
+        "postal_code": {
+          "name": "Código postal",
+          "description": "Removê-la apenas do hub de seguimento deste código postal. Omita-o para a remover de todos os hubs de seguimento."
         }
       }
     }

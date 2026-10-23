@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, quote, urlparse
 
 import aiohttp
 
-from .const import (
+from ..const import (
     DEFAULT_ACCOUNT_MARKET,
     MR_OAUTH_AUTHORIZE_URL,
     MR_OAUTH_BRAND,

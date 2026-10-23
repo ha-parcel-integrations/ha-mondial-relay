@@ -45,6 +45,111 @@ you act in one of these areas:
 
 ## Carrier-specific notes
 
+**Two sources in one domain, told apart by `entry.data["source"]`.**
+`account` signs in to a Mondial Relay account (everything in `account/`);
+`tracking` follows codes by code + postcode (everything in `tracking/`).
+Every read goes through `source.is_tracking_entry`, which defaults to
+**account**: entries from before tracking hubs existed have no `source` key
+and are all account hubs. This is the inverse of `ha-bpost`, whose original
+source was tracking — don't copy its default. The config flow's first step
+is a menu (`account` / `tracking`); the account branch is the country step,
+sign-in and reauth exactly as before. `api.py`, `coordinator.py` and
+`parcels.py` at the package root are re-export shims for the account source
+(`tests/test_compat_imports.py` keeps them honest); nothing in the repo
+imports them. What both sources share lives at the root: `polling.py`
+(schedule helpers, 429 backoff), `events.py` (the bus-event contract) and
+`parcel_lists.py` (sort, retention, `parse_iso`). Options branch on source
+too, and the two reload models must not mix: an account hub reloads on
+submit with no update listener, a tracking hub registers the update
+listener and refreshes live.
+
+**A tracking hub is one postcode.** Asked once at setup, with no network
+call; every parcel in the hub then needs only its code. `unique_id` is
+`tracking:<postcode>` (the prefix keeps it apart from an account's `sub`),
+the title `Mondial Relay (<postcode>)` and the device name the same. Two
+addresses mean two hubs. The postcode is free-form on purpose: stripped of
+outer whitespace, required non-empty, and otherwise sent verbatim — no
+pattern, no case or inner-space rewrite. A notation that does not match just
+comes back "not found" per parcel, the same reasoning as the no-regex rule
+for tracking codes below.
+
+**The lookup is always code + postcode, with an empty brand.** A shipment
+number is only unique per merchant brand, never globally: the same number
+with a guessed brand can return a stranger's parcel, while code + the
+recipient's postcode returns theirs. So there is no brand input, no default
+and no guess (a single marketplace already uses more than one brand), and
+`brand`/`codePays` are always sent empty. The code alone is refused.
+
+**Transport: Mondial Relay's public tracking, one session per cycle.** A
+`GET` of the tracking page sets cookies and carries a two-part `A:B` value on
+the `id="tracking"` element; every lookup in that cycle sends it back with
+the same cookies. Exactly one narrow regex reads that one attribute — nothing
+else is taken from the HTML — and a page without it fails the cycle, never a
+fallback. The session is the cycle's own (`aiohttp.ClientSession` on HA's
+connector with its own cookie jar), closed at the end, so these cookies never
+reach another integration. Plain `aiohttp` with a browser User-Agent is
+enough: do not add a fingerprinting library or any other requirement. If
+that stops working it is an outage to report, not a dependency to add. The
+host is fixed at `mondialrelay.be`: `.be` and `.nl` return the same data, the
+lookup ignores the country, and `.fr` refuses scripted clients with a `403`.
+Lookups run one after another, never in parallel.
+
+**Not found and refused are different paths — never merge them.** A `200`
+JSON object without `Expedition` (a `status` list) is "not found" for that
+parcel alone: both known variants carry `state: "warn"` and differ only in
+translated text, so neither `state` nor the text is ever branched on. A
+`403`, a `200` that is not JSON, or a page without its value is a refusal
+(`MondialRelayTrackingRefusedError`): the cycle stops with `UpdateFailed`,
+last-good data stays, one WARNING per entry until a cycle succeeds again,
+and no retries within the cycle. A refusal after the page was just fetched
+cannot be a stale page value, so it is never treated as one. A `429` backs
+off as everywhere else. Any other failure of one lookup is that parcel's
+problem only.
+
+**Tracking status is `SuiviParEtapes`' highest step that carries an
+`Evenement`, mapped by its integer key** (`tracking/parcels._STEP_MAP`):
+`1` → `registered`, `2` → `in_transit`, `3` → `in_transit` (it spans days of
+hub sorting, so it is not out for delivery), `4` → `at_pickup_point` for
+`DeliveryMode` `24R` and `in_transit` for any other mode, `5` → `delivered`.
+`raw_status` is the step as a string. An unknown highest step falls back to
+the highest known one; no step at all is `unknown`; both warn once. Only
+`24R` has been seen on a real parcel, so any other mode warns once and sets
+`pickup: false`. No problem or returning mapping exists yet, and
+`EstRetourAutorise` is a permission flag, not "returning". Never map by
+`Libelle` or any event text.
+
+**`DetailPointRelais` is never the pickup point.** It sits on individual
+events and names *that event's* location: on the drop-off event it is the
+**sender's** drop-off point, on the delivered event the collection point, and
+the "available" event carries none. So `pickup_point` stays `None`.
+`EstimatedDeliveryDate` becomes a whole local day for `planned_from`/
+`planned_to`, except year 1, which is "no estimate yet".
+
+**Timestamps are naive local time with a fraction of any width**, read as
+`Europe/Paris` (France, Belgium, the Netherlands and Spain share it).
+Portugal is an hour behind and is accepted as such — do not branch on
+country for it.
+
+**Every tracking parcel gets a `url`, built from the response, never the
+postcode.** `?numeroExpedition=<Numero>&codeMarque=<Enseigne[:2]>` opens the
+same parcel for anyone the link is shared with and carries no personal data.
+The page follows Home Assistant's own country and language
+(`tracking_page`): `NL` → `.nl`, `FR` → `.fr`, `BE` and every other country →
+`.be` in French when HA's language is French, else in Dutch. Spain and
+Portugal land there on purpose: those markets no longer have a Mondial
+Relay-branded site. There is no country setting anywhere. Account parcels
+keep `url: None`: the account record's `markAlphaCode` may be the same
+two-character brand, but that is unconfirmed.
+
+**Tracking hubs follow incoming parcels only — a decision, not a gap.** This
+is a deliberate exception to "add outgoing whenever a consumer can send": a
+sender has neither the recipient's postcode nor a safe lookup by brand (see
+above), so a tracking hub has no outgoing list, no `direction` on
+`track_parcel`, and its coordinator's `outgoing`/`delivered_outgoing` are
+always empty. It also creates no outgoing summary sensors and offers no
+outgoing device triggers. Parcels the user sent keep coming from an account
+hub. The same parcel tracked in both kinds of hub shows up twice.
+
 **Account model: OAuth/PKCE browser-paste, not credentials-in-HA.** Generated
 with `--auth credentials`, then the password-login assumption was replaced
 entirely — `config_flow.py`/`oauth.py` build the InPost Group authorization
@@ -108,8 +213,8 @@ unconfirmed number on an account whose parcel list loads fine must still set
 up successfully. Only an explicit `false` counts as unconfirmed; a missing or
 reshaped `phone` object warns once (`api.has_confirmed_phone`) and passes.
 
-**`stepSection` is the app's own step-section enum, mapped by its integer
-value** (`parcels._STEP_SECTION_MAP`): `1` → `at_pickup_point`, `2` →
+**The account's `stepSection` is the app's own step-section enum, mapped by
+its integer value** (`account/parcels._STEP_SECTION_MAP`): `1` → `at_pickup_point`, `2` →
 `in_transit`, `3` → `delivered`. `0` and `4` have no consumer meaning and stay
 `unknown` with the one-shot warning, like any value outside the map. `3` is
 confirmed on two real accounts (#8); `1`/`2` rest on the app alone, so treat a
@@ -119,7 +224,10 @@ report contradicting them as data, not noise. `raw_status` stays
 redacted in diagnostics like the raw field. Never map by
 `stepHint`/`stepPictoName`/a tracing code/translated text.
 
-**`CAPABILITIES` is deliberately empty.** Every optional field —
+**`CAPABILITIES_BY_VARIANT["Account"]` is deliberately empty**
+(`CAPABILITIES`/`PENDING_CAPABILITIES` alias the account variant). The
+`Tracking` variant claims `delivery_window`, `url` and `history`, which the
+tracking response carries. On the account, every optional field —
 `planned_from`/`planned_to`, `pickup_point`, `url`, `weight`, `dimensions`,
 `history` — is `None` until a consented account fixture (covering both list
 endpoints, plus `parcels-detail`) confirms it. `pickup` stays `False` even
@@ -161,7 +269,8 @@ do, this integration's sign-in breaks with nothing changed on our side. Nothing 
 build for it — just do not spend hours hunting a local cause if every
 account suddenly fails to authenticate at once.
 
-**Entry title is the literal string `"Mondial Relay"` for every account** —
+**Entry title is the literal string `"Mondial Relay"` for every account**
+(tracking hubs carry their postcode instead, see above) —
 not per-account, unlike most other multi-account carriers in this suite.
 Two configured accounts are told apart by the **device** name instead
 (`device.py` suffixes a non-reversible slice of `CONF_ACCOUNT_SUBJECT`), not
@@ -169,7 +278,7 @@ the config entry title. Don't "fix" this to look like DHL's per-account
 title — it is the setup contract this integration was built to.
 
 **Setup validates in two steps, identity before parcels.**
-`api.py::async_get_user_info` (`user-infos`) first, then
+`account/api.py::async_get_user_info` (`user-infos`) first, then
 `async_validate_parcel_access` (`parcels-list-received`, page 0 only, never
 the full paginated fetch). The order is the whole point: it is what splits
 `account_rejected` from `parcels_unavailable` in the table above. `user-infos`

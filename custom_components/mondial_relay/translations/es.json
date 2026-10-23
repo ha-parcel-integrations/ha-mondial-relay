@@ -4,9 +4,27 @@
     "step": {
       "user": {
         "title": "Configurar Mondial Relay",
+        "description": "Sigue los paquetes que te envían con su número de seguimiento, o inicia sesión en una cuenta de Mondial Relay.",
+        "menu_options": {
+          "account": "Cuenta",
+          "tracking": "Número de seguimiento"
+        }
+      },
+      "account": {
+        "title": "Configurar una cuenta de Mondial Relay",
         "description": "Elige el país en el que está registrada tu cuenta de Mondial Relay. Determina qué página de inicio de sesión obtienes y qué número de teléfono acepta.",
         "data": {
           "country": "País"
+        }
+      },
+      "tracking": {
+        "title": "Seguir paquetes por número de seguimiento",
+        "description": "No necesitas cuenta — solo el código postal al que van dirigidos los paquetes. Cada paquete que añadas a este hub se consulta con él. Añade otro hub para un código postal distinto.\n\nLos paquetes que envías no se siguen aquí; esos vienen de un hub de cuenta.",
+        "data": {
+          "postal_code": "Código postal"
+        },
+        "data_description": {
+          "postal_code": "El código postal al que va dirigido el paquete, escrito como en la etiqueta."
         }
       },
       "sign_in": {
@@ -30,10 +48,11 @@
       "parcels_unavailable": "La cuenta es válida, pero Mondial Relay no entregó su lista de paquetes. La causa habitual es una cuenta que nunca ha iniciado sesión en el sitio web o la aplicación de Mondial Relay: hazlo una vez y repite el inicio de sesión aquí. Si sigue ocurriendo, infórmalo con la advertencia registrada en custom_components.mondial_relay.",
       "account_rejected": "El inicio de sesión funcionó, pero el servicio de cuentas de Mondial Relay rechazó la sesión que acababa de emitir. La causa habitual es una cuenta que nunca ha iniciado sesión en el sitio web o la aplicación de Mondial Relay: hazlo una vez y repite el inicio de sesión aquí. Si sigue ocurriendo, infórmalo con la advertencia registrada en custom_components.mondial_relay.",
       "invalid_redirect": "Eso no parece la dirección a la que te redirigió la página de inicio de sesión. Asegúrate de haber copiado la dirección completa después de iniciar sesión.",
-      "cannot_connect": "No se pudo conectar con Mondial Relay. Inténtalo de nuevo."
+      "cannot_connect": "No se pudo conectar con Mondial Relay. Inténtalo de nuevo.",
+      "invalid_postcode": "Introduce el código postal al que van dirigidos los paquetes."
     },
     "abort": {
-      "already_configured": "Esta cuenta de Mondial Relay ya está configurada.",
+      "already_configured": "Esta cuenta de Mondial Relay o este código postal ya está configurado.",
       "reauth_successful": "Mondial Relay se ha vuelto a autenticar correctamente.",
       "wrong_account": "Ese inicio de sesión corresponde a otra cuenta de Mondial Relay. Inicia sesión con la cuenta con la que se configuró esta entrada."
     }
@@ -63,6 +82,68 @@
               "include_history": "Reservado para una versión futura: el sistema de cuentas de Mondial Relay no ofrece por ahora un historial de eventos que mostrar aquí."
             }
           }
+        }
+      },
+      "tracking": {
+        "title": "Opciones de Mondial Relay",
+        "menu_options": {
+          "parcels": "Paquetes",
+          "settings": "Ajustes"
+        }
+      },
+      "parcels": {
+        "title": "Gestionar paquetes",
+        "data": {
+          "tracking_codes": "Números de seguimiento"
+        },
+        "data_description": {
+          "tracking_codes": "El número o los números de seguimiento de Mondial Relay, como en la confirmación de envío. Se consultan con el código postal de este hub."
+        }
+      },
+      "settings": {
+        "title": "Ajustes",
+        "data": {
+          "delivered_filter_type": "Paquetes entregados: filtrar por",
+          "delivered_filter_amount": "Paquetes entregados: cantidad",
+          "include_history": "Incluir historial de estados"
+        },
+        "data_description": {
+          "delivered_filter_type": "Muestra los paquetes entregados de los últimos X días, o limita a los X más recientes.",
+          "delivered_filter_amount": "Número de días o paquetes a mostrar.",
+          "include_history": "Añade los eventos de seguimiento de cada paquete a su sensor."
+        }
+      }
+    },
+    "error": {
+      "invalid_tracking_code": "Introduce al menos un número de seguimiento."
+    }
+  },
+  "services": {
+    "track_parcel": {
+      "name": "Seguir paquete",
+      "description": "Empieza a seguir un paquete en un hub de seguimiento de Mondial Relay con su número de seguimiento.",
+      "fields": {
+        "tracking_code": {
+          "name": "Número de seguimiento",
+          "description": "El número de seguimiento de Mondial Relay."
+        },
+        "postal_code": {
+          "name": "Código postal",
+          "description": "A qué hub de seguimiento añadirlo, si hay más de uno configurado. Omítelo si solo hay uno."
+        }
+      }
+    },
+    "untrack_parcel": {
+      "name": "Dejar de seguir paquete",
+      "description": "Deja de seguir un paquete en un hub de seguimiento de Mondial Relay.",
+      "fields": {
+        "tracking_code": {
+          "name": "Número de seguimiento",
+          "description": "El número de seguimiento de Mondial Relay que quieres dejar de seguir."
+        },
+        "postal_code": {
+          "name": "Código postal",
+          "description": "Quitarlo solo del hub de seguimiento de este código postal. Omítelo para quitarlo de todos los hubs de seguimiento."
         }
       }
     }

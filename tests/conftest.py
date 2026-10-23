@@ -5,7 +5,8 @@ import sys
 import pytest
 from pytest_homeassistant_custom_component.plugins import hass  # noqa: F401
 
-from custom_components.mondial_relay import parcels
+from custom_components.mondial_relay.account import parcels
+from custom_components.mondial_relay.tracking import parcels as tracking_parcels
 
 
 @pytest.fixture(autouse=True)
@@ -17,11 +18,14 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 def reset_one_shot_warnings():
     """Clear the "already warned this session" flags between tests.
 
-    ``parcels._overlap_warned`` is module-level, so without this a test's
+    The flags and sets are module-level, so without this a test's
     one-shot-warning assertion would depend on which test already triggered
     it first.
     """
     parcels._overlap_warned = False
+    parcels._unmapped_steps_logged.clear()
+    tracking_parcels._unmapped_steps_logged.clear()
+    tracking_parcels._delivery_modes_logged.clear()
 
 
 if sys.platform == "win32":

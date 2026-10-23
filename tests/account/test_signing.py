@@ -4,7 +4,7 @@ Only shape is asserted — freshness and non-emptiness — never the derived
 value itself.
 """
 
-from custom_components.mondial_relay.signing import build_signature_headers
+from custom_components.mondial_relay.account.signing import build_signature_headers
 
 
 def test_headers_are_present_and_non_empty():

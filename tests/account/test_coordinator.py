@@ -11,10 +11,11 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.mondial_relay.api import (
+from custom_components.mondial_relay.account.api import (
     MondialRelayAuthError,
     MondialRelaySigningRejectedError,
 )
+from custom_components.mondial_relay.account.coordinator import MondialRelayCoordinator
 from custom_components.mondial_relay.const import (
     CONF_ACCOUNT_SUBJECT,
     CONF_DELIVERED_FILTER_AMOUNT,
@@ -24,9 +25,7 @@ from custom_components.mondial_relay.const import (
     DOMAIN,
     ParcelStatus,
 )
-from custom_components.mondial_relay.coordinator import MondialRelayCoordinator
-
-from .payloads import (
+from tests.payloads import (
     ACTIVE_CODE,
     DELIVERED_CODE,
     active_item,
