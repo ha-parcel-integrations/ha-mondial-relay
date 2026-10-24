@@ -271,12 +271,12 @@ quelques minutes."*), so on a 15–45 minute poll it would buy a sensor that
 appears and vanishes again, at the cost of an extra call every cycle. Revisit
 only if a user actually reports a just-created parcel missing.
 
-**The whole auth model can be switched server-side.** Mondial Relay can move
-sign-in between the InPost Group OAuth/PKCE route we use and an older login
-that we do not implement at all, without shipping an app update, and if they
-do, this integration's sign-in breaks with nothing changed on our side. Nothing to
-build for it — just do not spend hours hunting a local cause if every
-account suddenly fails to authenticate at once.
+**The InPost Group sign-in is the app's only one since app 1.28.0.** Earlier
+app versions could be switched server-side back to an older login that this
+integration does not implement; that switch is gone from 1.28.0. If every
+account suddenly fails to authenticate at once, look at a change on
+Mondial Relay's side first, not a local cause, but no longer expect a silent
+fallback to the old login.
 
 **Entry title is the literal string `"Mondial Relay"` for every account**
 (tracking hubs carry their postcode instead, see above) —
