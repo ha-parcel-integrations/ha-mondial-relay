@@ -183,6 +183,20 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
 
     async def _async_update_data(self) -> list[dict]:
         try:
+            return await self._async_poll()
+        except Exception:
+            # The base class keeps the last interval after a failure, which
+            # after an overnight poll is the whole quiet window.
+            now = dt_util.now()
+            self.update_interval = next_update_interval(
+                now,
+                _hottest_tier_minutes((self.data or []) + self.outgoing, now),
+                self.config_entry.entry_id,
+            )
+            raise
+
+    async def _async_poll(self) -> list[dict]:
+        try:
             received_raw = await self._client.async_get_list_received()
             shipped_raw = await self._client.async_get_list_shipped()
         except MondialRelaySigningRejectedError as err:

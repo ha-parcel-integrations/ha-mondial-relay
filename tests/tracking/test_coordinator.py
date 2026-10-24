@@ -1,7 +1,8 @@
 """Tests for the tracking hub's coordinator."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import logging
+from unittest.mock import patch
 
 import aiohttp
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -23,6 +24,7 @@ from custom_components.mondial_relay.const import (
     HOT_INTERVAL_MINUTES,
     MID_INTERVAL_MINUTES,
     SOURCE_TRACKING,
+    STAGGER_MINUTES,
     TRACKING_PAGE_NL,
     ParcelStatus,
 )
@@ -324,3 +326,24 @@ def test_tier_is_hot_only_close_to_an_out_for_delivery_window(planned_from, expe
     now = datetime(2030, 1, 1, 12, tzinfo=UTC)
     parcels = [{"status": ParcelStatus.OUT_FOR_DELIVERY, "planned_from": planned_from}]
     assert _hottest_tier_minutes(parcels, now) == expected
+
+
+async def test_failed_poll_drops_the_overnight_interval(hass):
+    coordinator, _ = _coordinator(hass, FakeClient())
+    coordinator.update_interval = timedelta(hours=5, minutes=40)
+
+    noon = datetime(2026, 1, 15, 12, tzinfo=UTC)
+    with (
+        patch.object(coordinator, "_async_poll", side_effect=TimeoutError),
+        patch(
+            "custom_components.mondial_relay.tracking.coordinator.dt_util.now",
+            return_value=noon,
+        ),
+        pytest.raises(TimeoutError),
+    ):
+        await coordinator._async_update_data()
+
+    assert coordinator.update_interval is not None
+    assert coordinator.update_interval <= timedelta(
+        minutes=MID_INTERVAL_MINUTES + STAGGER_MINUTES
+    )
