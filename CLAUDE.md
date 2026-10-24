@@ -118,6 +118,12 @@ the highest known one; no step at all is `unknown`; both warn once. Only
 `EstRetourAutorise` is a permission flag, not "returning". Never map by
 `Libelle` or any event text.
 
+**History statuses come from the steps, not the event text.** Events carry no
+code of their own, so each takes the status of the latest `SuiviParEtapes`
+step reached by its moment (`tracking/parcels.step_marks`): a step's own event
+and everything after it until the next step share that step's status, with
+the same `24R` rule for step 4. An event before any step stays `None`.
+
 **`pickup_point` comes only from the event dated as step 5 or step 4.**
 `DetailPointRelais` sits on individual events and names *that event's*
 location: on the drop-off event it is the **sender's** drop-off point, on the
@@ -235,8 +241,8 @@ redacted in diagnostics like the raw field. Never map by
 
 **`CAPABILITIES_BY_VARIANT["Account"]` is deliberately empty**
 (`CAPABILITIES`/`PENDING_CAPABILITIES` alias the account variant). The
-`Tracking` variant claims `delivery_window`, `url` and `history`, which the
-tracking response carries. On the account, every optional field —
+`Tracking` variant claims `delivery_window`, `pickup_point`, `url` and
+`history`, which the tracking response carries. On the account, every optional field —
 `planned_from`/`planned_to`, `pickup_point`, `url`, `weight`, `dimensions`,
 `history` — is `None` until a consented account fixture (covering both list
 endpoints, plus `parcels-detail`) confirms it. `pickup` stays `False` even

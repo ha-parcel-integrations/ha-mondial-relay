@@ -315,10 +315,45 @@ def test_history_is_oldest_first_with_trimmed_text():
     )
     assert history[0] == {
         "timestamp": "2030-01-01T10:00:00.123000+01:00",
-        "status": None,
+        "status": ParcelStatus.REGISTERED,
         "raw_status": "Pakje in voorbereiding bij de verzender",
     }
     assert len(history) == 5
+
+
+def test_each_event_takes_the_latest_step_reached_by_its_moment():
+    history = _normalize(delivered(), include_history=True)["history"]
+    assert [entry["status"] for entry in history] == [
+        ParcelStatus.REGISTERED,
+        ParcelStatus.IN_TRANSIT,
+        ParcelStatus.IN_TRANSIT,
+        ParcelStatus.IN_TRANSIT,
+        ParcelStatus.AT_PICKUP_POINT,
+        ParcelStatus.DELIVERED,
+    ]
+
+
+def test_a_ready_event_outside_a_pickup_point_delivery_is_in_transit():
+    expedition = available()
+    expedition["DeliveryMode"] = "HOM"
+    history = _normalize(expedition, include_history=True)["history"]
+    assert history[-1]["status"] is ParcelStatus.IN_TRANSIT
+
+
+def test_an_event_before_any_step_or_odd_steps_have_no_status():
+    expedition = available()
+    expedition["Evenements"].insert(
+        0, {"Date": "2029-12-31T09:00:00", "Libelle": "vroeg"}
+    )
+    expedition["SuiviParEtapes"]["x"] = {"Evenement": {"Date": "2030-01-01T00:00:00"}}
+    expedition["SuiviParEtapes"]["9"] = {"Evenement": {"Date": "2030-01-01T00:00:00"}}
+    expedition["SuiviParEtapes"]["2"]["Evenement"] = "not a mark"
+    history = _normalize(expedition, include_history=True)["history"]
+    assert history[0]["status"] is None
+    assert history[1]["status"] is ParcelStatus.REGISTERED
+    # Step 2's mark is unusable, so the next events keep step 1's status
+    # until step 3 is reached.
+    assert history[2]["status"] is ParcelStatus.REGISTERED
 
 
 def test_history_skips_odd_events_and_keeps_the_newest():

@@ -188,14 +188,43 @@ def _planned_window(expedition: dict[str, Any]) -> tuple[str | None, str | None]
     return start.isoformat(), end.isoformat()
 
 
+def step_marks(
+    expedition: dict[str, Any], *, pickup: bool
+) -> list[tuple[datetime, ParcelStatus]]:
+    """Return each reached, mapped step's moment and status, oldest first."""
+    steps = expedition.get("SuiviParEtapes")
+    marks: list[tuple[datetime, ParcelStatus]] = []
+    for key, step in (steps if isinstance(steps, dict) else {}).items():
+        mark = step.get("Evenement") if isinstance(step, dict) else None
+        moment = parse_iso(
+            local_timestamp(mark.get("Date")) if isinstance(mark, dict) else None
+        )
+        try:
+            status = _STEP_MAP.get(int(key))
+        except (TypeError, ValueError):
+            continue
+        if moment is None or status is None:
+            continue
+        if status is ParcelStatus.AT_PICKUP_POINT and not pickup:
+            status = ParcelStatus.IN_TRANSIT
+        marks.append((moment, status))
+    return sorted(marks, key=lambda item: item[0])
+
+
 def build_history(
-    events: Any, *, max_events: int = HISTORY_MAX_EVENTS
+    events: Any,
+    *,
+    marks: list[tuple[datetime, ParcelStatus]] | None = None,
+    max_events: int = HISTORY_MAX_EVENTS,
 ) -> list[dict[str, Any]]:
     """Build the canonical ``history`` from ``Evenements``.
 
-    Events carry no status code of their own, so ``status`` stays ``None``
-    and ``raw_status`` is the event's own text. Sorted oldest → newest and
-    capped to the most recent ``max_events``, like every carrier in the suite.
+    Events carry no status code of their own. Each one takes the status of
+    the latest step reached by its moment (``marks``), so a step's own event
+    and everything after it until the next step share that step's status;
+    an event before any step stays ``None``. ``raw_status`` is the event's
+    own text. Sorted oldest → newest and capped to the most recent
+    ``max_events``, like every carrier in the suite.
     """
     parseable: list[tuple[datetime, dict[str, Any]]] = []
     for event in events if isinstance(events, list) else []:
@@ -211,13 +240,24 @@ def build_history(
                 parsed,
                 {
                     "timestamp": timestamp,
-                    "status": None,
+                    "status": _status_at(parsed, marks or []),
                     "raw_status": label.strip() if isinstance(label, str) else None,
                 },
             )
         )
     parseable.sort(key=lambda item: item[0])
     return [entry for _, entry in parseable][-max_events:]
+
+
+def _status_at(
+    moment: datetime, marks: list[tuple[datetime, ParcelStatus]]
+) -> ParcelStatus | None:
+    status = None
+    for reached, step_status in marks:
+        if reached > moment:
+            break
+        status = step_status
+    return status
 
 
 def tracking_page(country: str | None, language: str | None) -> str:
@@ -289,7 +329,12 @@ def normalize_parcel(
         "weight": None,
         "dimensions": None,
         "history": (
-            build_history(expedition.get("Evenements")) if include_history else None
+            build_history(
+                expedition.get("Evenements"),
+                marks=step_marks(expedition, pickup=pickup),
+            )
+            if include_history
+            else None
         ),
         "raw": expedition,
     }
