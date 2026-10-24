@@ -112,7 +112,9 @@ problem only.
 hub sorting, so it is not out for delivery), `4` → `at_pickup_point` for
 `DeliveryMode` `24R` and `in_transit` for any other mode, `5` → `delivered`.
 `raw_status` is the step as a string. An unknown highest step falls back to
-the highest known one; no step at all is `unknown`; both warn once. Only
+the highest known one; no step at all is `unknown`. Every reached step that
+does not map warns once, also one below a known step, because the history
+skips it too and would otherwise hide it. Only
 `24R` has been seen on a real parcel, so any other mode warns once and sets
 `pickup: false`. No problem or returning mapping exists yet, and
 `EstRetourAutorise` is a permission flag, not "returning". Never map by

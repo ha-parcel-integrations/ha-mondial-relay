@@ -53,16 +53,22 @@ _unmapped_steps_logged: set[str] = set()
 _delivery_modes_logged: set[str] = set()
 
 
-def _warn_unmapped_step(step: str) -> None:
+def _warn_unmapped_step(step: str, outcome: str) -> None:
     if step in _unmapped_steps_logged:
         return
     _unmapped_steps_logged.add(step)
     _LOGGER.warning(
         "Unrecognised Mondial Relay tracking step — help us map it. Open an "
-        "issue and paste this line: %s\n  step=%s → reported as 'unknown'",
+        "issue and paste this line: %s\n  step=%s → %s",
         NEW_ISSUE_URL,
         step,
+        outcome,
     )
+
+
+_SKIPPED_STEP = (
+    "skipped; the parcel and its history keep the latest step that is mapped"
+)
 
 
 def _warn_delivery_mode(mode: str) -> None:
@@ -105,7 +111,7 @@ def _reached_steps(expedition: dict[str, Any]) -> list[tuple[int, str]]:
         try:
             reached.append((int(key), str(key)))
         except (TypeError, ValueError):
-            _warn_unmapped_step(str(key))
+            _warn_unmapped_step(str(key), _SKIPPED_STEP)
     return sorted(reached, reverse=True)
 
 
@@ -115,18 +121,21 @@ def map_status(
     """Return ``(status, raw_status, mapped step)`` for one ``Expedition``.
 
     An unknown highest step falls back to the highest one that maps, and
-    only then to ``unknown``; either way the unknown step warns once.
+    only then to ``unknown``. Every reached step that does not map warns
+    once, also one below a mapped step: the history skips it too.
     """
     reached = _reached_steps(expedition)
     if not reached:
-        _warn_unmapped_step("none")
+        _warn_unmapped_step("none", "no step reached; reported as 'unknown'")
         return ParcelStatus.UNKNOWN, None, None
-    raw_status = reached[0][1]
     for number, raw in reached:
+        if number not in _STEP_MAP:
+            _warn_unmapped_step(raw, _SKIPPED_STEP)
+    raw_status = reached[0][1]
+    for number, _raw in reached:
         status = _STEP_MAP.get(number)
         if status is not None:
             return status, raw_status, number
-        _warn_unmapped_step(raw)
     return ParcelStatus.UNKNOWN, raw_status, None
 
 

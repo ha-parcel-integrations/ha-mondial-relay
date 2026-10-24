@@ -164,6 +164,19 @@ def test_an_unknown_step_falls_back_to_the_highest_known_one(caplog):
     assert "step=7" in caplog.text
 
 
+def test_an_unknown_step_below_a_known_one_still_warns_once(caplog):
+    # The status itself is unaffected, but the history skips this step, so
+    # it must not pass silently.
+    expedition = at_step(3)
+    expedition["SuiviParEtapes"]["0"] = {"Evenement": {"Date": "2030-01-01"}}
+    with caplog.at_level(logging.WARNING):
+        first = _normalize(expedition, include_history=True)
+        _normalize(expedition, include_history=True)
+    assert first["status"] is ParcelStatus.IN_TRANSIT
+    assert first["raw_status"] == "3"
+    assert caplog.text.count("step=0 → skipped") == 1
+
+
 def test_a_non_numeric_step_key_is_ignored_and_warns(caplog):
     expedition = at_step(2)
     expedition["SuiviParEtapes"]["x"] = {"Evenement": {"Date": "2030-01-07"}}
