@@ -175,6 +175,7 @@ Standard HA removal applies: **Settings → Devices & Services → Mondial Relay
 | `sensor.mondial_relay_awaiting_pickup` | Number of incoming parcels ready to collect at a pickup point |
 | `sensor.mondial_relay_delivered_parcels` | Recently delivered incoming parcels (see the retention option) |
 | `sensor.mondial_relay_outgoing_delivered_parcels` | Recently delivered outgoing parcels (account hubs only; see the retention option) |
+| `calendar.mondial_relay_deliveries` | Read-only calendar of expected deliveries, no extra API calls |
 | `sensor.mondial_relay_last_successful_update` | Diagnostic: when Mondial Relay was last polled successfully |
 
 A delivered parcel moves from its per-parcel sensor to the appropriate delivered sensor automatically.
