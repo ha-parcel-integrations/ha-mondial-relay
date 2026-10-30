@@ -487,3 +487,28 @@ async def test_outgoing_no_event_for_unknown_barcode_or_unchanged_status(hass):
     await hass.async_block_till_done()
 
     assert events == []
+
+
+async def test_a_parcel_the_delivered_list_leaves_out_still_fires_delivered(hass):
+    """The retention option limits the delivered sensor, never the events."""
+    entry = _entry()
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, CONF_DELIVERED_FILTER_AMOUNT: 1}
+    )
+    other = {"shipment_uid": "shp-other-0002", "shipment_id": 22222222}
+    client = _client(received=[list_item(), list_item(**other)])
+    coordinator = MondialRelayCoordinator(hass, client, entry)
+    delivered = []
+    hass.bus.async_listen(f"{DOMAIN}_parcel_delivered", lambda e: delivered.append(e))
+
+    await coordinator._async_update_data()
+    client.async_get_list_received.return_value = [
+        list_item(step_section=3),
+        list_item(step_section=3, **other),
+    ]
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    assert sorted(e.data["barcode"] for e in delivered) == ["12345678", "22222222"]
+    assert len(coordinator.delivered) == 1

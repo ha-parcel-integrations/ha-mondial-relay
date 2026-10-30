@@ -347,3 +347,23 @@ async def test_failed_poll_drops_the_overnight_interval(hass):
     assert coordinator.update_interval <= timedelta(
         minutes=MID_INTERVAL_MINUTES + STAGGER_MINUTES
     )
+
+
+async def test_a_parcel_the_delivered_list_leaves_out_still_fires_delivered(hass):
+    """The retention option limits the delivered sensor, never the events."""
+    client = FakeClient({CODE_A: available(), CODE_B: in_distribution()})
+    coordinator, _ = _coordinator(
+        hass,
+        client,
+        _entry(codes=(CODE_A, CODE_B), **{CONF_DELIVERED_FILTER_AMOUNT: 1}),
+    )
+    events = []
+    hass.bus.async_listen(f"{DOMAIN}_parcel_delivered", lambda e: events.append(e))
+
+    await coordinator._async_update_data()
+    client.answers = {CODE_A: delivered(), CODE_B: delivered()}
+    await coordinator._async_update_data()
+    await hass.async_block_till_done()
+
+    assert len(events) == 2
+    assert len(coordinator.delivered) == 1

@@ -234,21 +234,25 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
         active_outgoing = [p for p in outgoing_normalized if not p["delivered"]]
         delivered_outgoing = [p for p in outgoing_normalized if p["delivered"]]
 
-        self.delivered = apply_delivered_filter(
-            sort_parcels_by_ts(delivered_incoming, "delivered_at", descending=True),
-            self.config_entry,
+        delivered_sorted = sort_parcels_by_ts(
+            delivered_incoming, "delivered_at", descending=True
+        )
+        self.delivered = apply_delivered_filter(delivered_sorted, self.config_entry)
+        delivered_outgoing_sorted = sort_parcels_by_ts(
+            delivered_outgoing, "delivered_at", descending=True
         )
         self.delivered_outgoing = apply_delivered_filter(
-            sort_parcels_by_ts(delivered_outgoing, "delivered_at", descending=True),
-            self.config_entry,
+            delivered_outgoing_sorted, self.config_entry
         )
         normalized_active = sort_parcels_by_ts(active_incoming, "planned_from")
         self.outgoing = sort_parcels_by_ts(active_outgoing, "planned_from")
 
         # Incoming/outgoing = active + delivered, combined so the transition
         # to delivered is visible in one set.
-        incoming = normalized_active + self.delivered
-        outgoing = self.outgoing + self.delivered_outgoing
+        # Events and remembered state cover every parcel; the retention option
+        # only limits what the delivered sensor shows.
+        incoming = normalized_active + delivered_sorted
+        outgoing = self.outgoing + delivered_outgoing_sorted
         self._fire_change_events(incoming)
         self._fire_outgoing_change_events(outgoing)
 
