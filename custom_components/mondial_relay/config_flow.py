@@ -23,7 +23,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlow,
+    OptionsFlowWithReload,
 )
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import section
@@ -410,11 +410,11 @@ class MondialRelayConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class MondialRelayOptionsFlowHandler(OptionsFlow):
+class MondialRelayOptionsFlowHandler(OptionsFlowWithReload):
     """Manage an account hub's settings, or a tracking hub's parcels and settings.
 
     The two apply changes differently and must not mix: an account hub
-    reloads on submit and registers no update listener, a tracking hub's
+    is an automatic reload and registers no update listener, a tracking hub's
     update listener refreshes its coordinator live.
     """
 
@@ -422,15 +422,14 @@ class MondialRelayOptionsFlowHandler(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Offer a tracking hub's menu, or show an account hub's sectioned form."""
+        # A tracking hub's update listener may not be combined with the
+        # automatic reload; an account hub reloads once the options are saved.
+        self.automatic_reload = not is_tracking_entry(self.config_entry)
         if is_tracking_entry(self.config_entry):
             return await self.async_step_tracking()
         if user_input is not None:
             delivered = user_input["delivered"]
             history = user_input["history"]
-            # Reload so a changed history/delivered-retention setting takes
-            # effect immediately. No update listener is registered —
-            # combining the two is deprecated.
-            self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
             return self.async_create_entry(
                 title="",
                 data={
