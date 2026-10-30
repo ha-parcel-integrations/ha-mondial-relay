@@ -172,6 +172,7 @@ Standard HA removal applies: **Settings → Devices & Services → Mondial Relay
 | `sensor.mondial_relay_outgoing_parcels` | Number of active parcels you sent (account hubs only) |
 | `sensor.mondial_relay_parcel_<code>` | One per tracked parcel (either direction); state is the canonical status, attributes carry the full normalised parcel |
 | `sensor.mondial_relay_next_delivery` | Earliest expected delivery moment across all active incoming parcels — on an account hub currently always empty, see the pre-1.0 note above |
+| `sensor.mondial_relay_en_route_to_pickup_point` | Incoming parcels on their way to a pickup point that have not arrived yet |
 | `sensor.mondial_relay_awaiting_pickup` | Number of incoming parcels ready to collect at a pickup point |
 | `sensor.mondial_relay_delivered_parcels` | Recently delivered incoming parcels (see the retention option) |
 | `sensor.mondial_relay_outgoing_delivered_parcels` | Recently delivered outgoing parcels (account hubs only; see the retention option) |
