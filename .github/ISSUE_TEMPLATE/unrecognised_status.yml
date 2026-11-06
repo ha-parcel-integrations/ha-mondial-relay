@@ -25,6 +25,33 @@ body:
       render: text
     validations:
       required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Which Mondial Relay setup logged it?
+      description: The source you picked during setup, shown on the integration's entry under Settings → Devices & services → Mondial Relay.
+      options:
+        - Account
+        - Tracking code
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: country
+    attributes:
+      label: Which country did you pick during setup?
+      description: Only asked for an Account setup — leave it on "Not sure" for a tracking-code setup.
+      options:
+        - France
+        - Belgium
+        - Netherlands
+        - Spain
+        - Portugal
+        - Not sure
+    validations:
+      required: false
+
   - type: input
     id: version
     attributes:

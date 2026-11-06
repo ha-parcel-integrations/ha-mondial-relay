@@ -5,6 +5,33 @@ labels: ["enhancement"]
 assignees:
   - peter-mdf
 body:
+  - type: dropdown
+    id: source
+    attributes:
+      label: Which Mondial Relay setup is this about?
+      description: The source you picked during setup, shown on the integration's entry under Settings → Devices & services → Mondial Relay.
+      options:
+        - Account
+        - Tracking code
+        - All of them / not setup-specific
+    validations:
+      required: true
+
+  - type: dropdown
+    id: country
+    attributes:
+      label: Which country is this about?
+      description: A country is only picked for an Account setup; tracking codes are country-less.
+      options:
+        - France
+        - Belgium
+        - Netherlands
+        - Spain
+        - Portugal
+        - All of them / not country-specific
+    validations:
+      required: false
+
   - type: textarea
     id: feature
     attributes:
