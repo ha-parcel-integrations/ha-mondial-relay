@@ -195,7 +195,7 @@
         "name": "Prochaine livraison"
       },
       "en_route_to_pickup_point": {
-        "name": "En route vers le point relais",
+        "name": "En route vers le point de retrait",
         "unit_of_measurement": "colis"
       },
       "awaiting_pickup": {

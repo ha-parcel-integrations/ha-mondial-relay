@@ -195,7 +195,7 @@
         "name": "Volgende bezorging"
       },
       "en_route_to_pickup_point": {
-        "name": "Onderweg naar ophaalpunt",
+        "name": "Onderweg naar afhaalpunt",
         "unit_of_measurement": "pakketten"
       },
       "awaiting_pickup": {

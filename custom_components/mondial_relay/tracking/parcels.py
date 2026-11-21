@@ -11,7 +11,7 @@ so the carrier-specific mapping stays unit-testable without Home Assistant.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 import logging
 from typing import Any
 from urllib.parse import urlencode
@@ -26,7 +26,7 @@ from ..const import (
     TRACKING_PAGE_NL,
     ParcelStatus,
 )
-from ..parcel_lists import parse_iso
+from ..parcel_lists import is_pickup, parse_iso, planned_for_status, planned_window
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -192,9 +192,7 @@ def _planned_window(expedition: dict[str, Any]) -> tuple[str | None, str | None]
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     day = parsed.astimezone(CARRIER_TZ).date()
-    start = datetime(day.year, day.month, day.day, tzinfo=CARRIER_TZ)
-    end = start + timedelta(days=1) - timedelta(seconds=1)
-    return start.isoformat(), end.isoformat()
+    return planned_window(day, None, zone=CARRIER_TZ)
 
 
 def step_marks(
@@ -308,14 +306,15 @@ def normalize_parcel(
     )
 
     mode = expedition.get("DeliveryMode")
-    pickup = mode == PICKUP_POINT_MODE
-    if has_steps and not pickup:
+    pickup_route = mode == PICKUP_POINT_MODE
+    if has_steps and not pickup_route:
         _warn_delivery_mode(str(mode))
         if step == _STEP_AVAILABLE:
             status = ParcelStatus.IN_TRANSIT
+    pickup = is_pickup(pickup_route, status)
 
     delivered = status is ParcelStatus.DELIVERED
-    planned_from, planned_to = _planned_window(expedition)
+    planned_from, planned_to = planned_for_status(status, *_planned_window(expedition))
     number = expedition.get("Numero")
     merchant = expedition.get("Enseigne")
 
@@ -330,8 +329,8 @@ def normalize_parcel(
         "raw_status": raw_status,
         "delivered": delivered,
         "delivered_at": _step_date(expedition, _STEP_DELIVERED) if delivered else None,
-        "planned_from": None if delivered else planned_from,
-        "planned_to": None if delivered else planned_to,
+        "planned_from": planned_from,
+        "planned_to": planned_to,
         "pickup": pickup,
         "pickup_point": _pickup_point(expedition) if pickup else None,
         "url": tracking_url(expedition, page),

@@ -152,6 +152,13 @@ def in_distribution() -> dict[str, Any]:
     return expedition
 
 
+def in_transit_with_estimate() -> dict[str, Any]:
+    """The parcel in hub sorting (step 3) with a delivery estimate."""
+    expedition = in_distribution()
+    expedition["EstimatedDeliveryDate"] = "2030-01-05T13:52:54"
+    return expedition
+
+
 def at_step(step: int) -> dict[str, Any]:
     """The parcel with steps 1..``step`` reached and nothing beyond."""
     expedition = available()

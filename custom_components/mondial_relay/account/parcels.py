@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 
 from ..const import NEW_ISSUE_URL, ParcelStatus
+from ..parcel_lists import is_pickup
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,8 +90,8 @@ def _barcode(expedition: dict) -> str | None:
 def normalize_parcel(raw: dict) -> dict:
     """Return a carrier-agnostic parcel dict for one ``expedition``/``delivery`` item.
 
-    The optional fields stay ``None``/``False`` until real data settles the
-    detail payload and what ``locker`` means for the ``pickup`` flag.
+    The optional fields stay ``None`` until real data settles the detail
+    payload; ``pickup`` follows the step alone, as ``locker`` is unconfirmed.
     """
     expedition = raw.get("expedition") or {}
     step_section = expedition.get("stepSection")
@@ -114,7 +115,7 @@ def normalize_parcel(raw: dict) -> dict:
         "delivered_at": expedition.get("tracingDate") if delivered else None,
         "planned_from": None,
         "planned_to": None,
-        "pickup": False,
+        "pickup": is_pickup(None, status),
         "pickup_point": None,
         "url": None,
         "weight": None,

@@ -35,10 +35,11 @@ you act in one of these areas:
   summary+diagnostic sensors. Add a new non-parcel sensor's unique_id to the set.
 - **Per-parcel sensors are removed by the summary sensor** via
   `entity_registry.async_remove` (self-removal races and leaves ghosts).
-- **The optional pickup-point summaries are a pair.** A carrier that can tell
-  a parcel is destined for a pickup point exposes
-  `en_route_to_pickup_point` for `pickup is true` before it arrives; one that
-  can reach `ParcelStatus.AT_PICKUP_POINT` also exposes `awaiting_pickup`.
+- **The pickup-point summaries are a pair.** A carrier that can deliver to a
+  pickup point or locker exposes both `en_route_to_pickup_point` and
+  `awaiting_pickup`, even before a real parcel has shown the status or flag
+  (they read 0 until then; record it in `PENDING_*`). A carrier without pickup
+  points exposes neither and keeps `pickup` constantly False.
   See *Parcel contract* in `CONVENTIONS.md`. Say "pickup point", not
   "ServicePoint"/"parcel shop"/"locker", for the generic concept; the
   example carrier demonstrates both canonical sensors.
@@ -140,7 +141,7 @@ on purpose.
 had it, it was the drop-off moment plus exactly eight days, written in UTC
 without an offset. It is still the latest expected day, so it becomes a whole
 local day for `planned_from`/`planned_to` (converted from UTC first) until
-the parcel is delivered, then both are `None`. Year 1 is "no estimate yet".
+the parcel is at the pickup point or delivered, then both are `None`. Year 1 is "no estimate yet".
 
 **Timestamps are naive local time with a fraction of any width**, read as
 `Europe/Paris` (France, Belgium, the Netherlands and Spain share it).
@@ -247,9 +248,12 @@ redacted in diagnostics like the raw field. Never map by
 `history`, which the tracking response carries. On the account, every optional field —
 `planned_from`/`planned_to`, `pickup_point`, `url`, `weight`, `dimensions`,
 `history` — is `None` until a consented account fixture (covering both list
-endpoints, plus `parcels-detail`) confirms it. `pickup` stays `False` even
-for a `locker: true` shipment; that field's meaning for the *recipient* is
-unconfirmed.
+endpoints, plus `parcels-detail`) confirms it. `pickup` follows the step alone (`True` at `at_pickup_point`, via
+`is_pickup`) and drops back to `False` once collected: the account carries no
+confirmed route field (`locker: true` is unconfirmed for the *recipient*), so
+the contract's "stays true after collection" cannot hold here yet.
+`en_route_to_pickup_point` therefore reads 0 on the account until a route
+field is confirmed.
 
 **`raw` is the full list item** (`{expedition, delivery}`), untrimmed.
 Privacy lives only in `diagnostics.py`'s redaction set — when the fixture

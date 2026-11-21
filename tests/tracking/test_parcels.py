@@ -27,7 +27,13 @@ from custom_components.mondial_relay.tracking.parcels import (
 )
 from tests.payloads import active_item
 
-from .payloads import at_step, available, delivered, in_distribution
+from .payloads import (
+    at_step,
+    available,
+    delivered,
+    in_distribution,
+    in_transit_with_estimate,
+)
 
 PAGE = TRACKING_PAGE_BE_NL
 
@@ -61,7 +67,7 @@ def test_tracking_capabilities_match_what_the_normaliser_fills():
         "url",
         "history",
     }
-    active = _normalize(available())
+    active = _normalize(in_transit_with_estimate())
     assert active["planned_from"] is not None
     assert active["planned_to"] is not None
     assert parcel["pickup_point"] is not None
@@ -220,14 +226,14 @@ def test_an_active_parcel_has_no_delivered_at():
 
 
 def test_the_estimate_becomes_a_whole_local_day():
-    parcel = _normalize(available())
+    parcel = _normalize(in_transit_with_estimate())
     assert parcel["planned_from"] == "2030-01-05T00:00:00+01:00"
     assert parcel["planned_to"] == "2030-01-05T23:59:59+01:00"
 
 
 @pytest.mark.parametrize("estimate", ["0001-01-01T00:00:00", "garbage", None, 5])
 def test_a_missing_or_placeholder_estimate_has_no_window(estimate):
-    expedition = available()
+    expedition = in_transit_with_estimate()
     expedition["EstimatedDeliveryDate"] = estimate
     parcel = _normalize(expedition)
     assert parcel["planned_from"] is None
@@ -235,10 +241,17 @@ def test_a_missing_or_placeholder_estimate_has_no_window(estimate):
 
 
 def test_the_estimate_is_read_as_utc_before_its_local_day_is_taken():
-    expedition = available()
+    expedition = in_transit_with_estimate()
     # 23:30 UTC is already the next day in local time.
     expedition["EstimatedDeliveryDate"] = "2030-01-05T23:30:00"
     assert _normalize(expedition)["planned_from"] == "2030-01-06T00:00:00+01:00"
+
+
+def test_a_parcel_ready_at_the_pickup_point_has_no_window():
+    parcel = _normalize(available())
+    assert parcel["status"] is ParcelStatus.AT_PICKUP_POINT
+    assert parcel["planned_from"] is None
+    assert parcel["planned_to"] is None
 
 
 def test_a_delivered_parcel_has_no_window():
