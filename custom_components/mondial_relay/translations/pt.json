@@ -130,6 +130,10 @@
         "postal_code": {
           "name": "Código postal",
           "description": "A que hub de seguimento a adicionar, se houver mais do que um configurado. Omita-o se só existir um."
+        },
+        "contents": {
+          "name": "Conteúdo",
+          "description": "O que está na encomenda, nas suas próprias palavras. Chamar novamente para uma encomenda acompanhada substitui o conteúdo; um texto vazio apaga-o."
         }
       }
     },
@@ -144,6 +148,24 @@
         "postal_code": {
           "name": "Código postal",
           "description": "Removê-la apenas do hub de seguimento deste código postal. Omita-o para a remover de todos os hubs de seguimento."
+        }
+      }
+    },
+    "update_contents": {
+      "name": "Atualizar o conteúdo da encomenda",
+      "description": "Defina o que está numa encomenda, nas suas próprias palavras, para um código de seguimento. Um texto vazio apaga o conteúdo.",
+      "fields": {
+        "tracking_code": {
+          "name": "Número de seguimento",
+          "description": "O número de seguimento Mondial Relay."
+        },
+        "contents": {
+          "name": "Conteúdo",
+          "description": "O que está na encomenda, nas suas próprias palavras. Um texto vazio apaga-o."
+        },
+        "config_entry_id": {
+          "name": "Conta",
+          "description": "A conta para a qual guardar isto. Necessária quando nenhuma conta conhece ainda o código."
         }
       }
     }
@@ -220,6 +242,11 @@
       "parcel": {
         "name": "Encomenda {barcode}"
       }
+    }
+  },
+  "exceptions": {
+    "update_contents_entry_required": {
+      "message": "Nenhuma conta conhece este código. Escolha a conta para a qual o guardar."
     }
   }
 }

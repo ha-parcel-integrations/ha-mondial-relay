@@ -37,6 +37,7 @@ async def test_diagnostics_redacts_and_counts(hass):
             "barcode": "06180712345678",
             "sender": "V1VINTNL",
             "receiver": None,
+            "contents": "Running shoes",
             "status": "in_transit",
             "raw_status": "2",
             "delivered_at": "2026-04-27T23:03:58Z",
@@ -67,6 +68,7 @@ async def test_diagnostics_redacts_and_counts(hass):
     assert result["entry_data"]["device_uid"] == "**REDACTED**"
     assert result["incoming"][0]["barcode"] == "**REDACTED**"
     assert result["incoming"][0]["sender"] == "**REDACTED**"
+    assert result["incoming"][0]["contents"] == "**REDACTED**"
     assert result["incoming"][0]["delivered_at"] == "**REDACTED**"
     # non-identifying fields survive, or the diagnostics would be useless
     assert result["incoming"][0]["status"] == "in_transit"

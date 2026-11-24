@@ -134,3 +134,17 @@ def test_a_moment_stretched_to_the_end_of_day_stays_timed():
         ]
     )
     assert isinstance(cal._events()[0].start, datetime)
+
+
+def test_event_title_prefers_contents_then_sender_then_barcode():
+    with_contents = _parcel("A", planned_from="2099-01-01T10:00:00Z")
+    with_contents["contents"] = "Running shoes"
+    assert _cal([with_contents]).event.summary == "Running shoes"
+
+    no_contents = _parcel("A", planned_from="2099-01-01T10:00:00Z")
+    no_contents["contents"] = None
+    assert _cal([no_contents]).event.summary == "Example Sender"
+
+    bare = _parcel("A", planned_from="2099-01-01T10:00:00Z")
+    bare["sender"] = None
+    assert _cal([bare]).event.summary == "Parcel A"

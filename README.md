@@ -50,6 +50,7 @@ A custom Home Assistant integration that tracks your [Mondial Relay](https://www
 - Read-only **Deliveries** calendar, filled from the expected delivery day of parcels followed by tracking code
 - Events + device triggers for no-code automations (parcel registered, status changed, delivered, delivery time changed, and the outgoing equivalents on account hubs)
 - `track_parcel` / `untrack_parcel` services to add or remove a tracking code from an automation or dashboard
+- `update_contents` service (and an optional `contents` field on `track_parcel`) to note what is in a parcel; it titles the calendar event and shows on the next-delivery sensor
 - Manual refresh button and a diagnostic last-update sensor
 
 ## Requirements
@@ -123,12 +124,15 @@ status-driven schedule with nothing to configure.
 
 ## Services
 
-Both act on tracking hubs only; an account hub's parcels come from the account itself.
+`track_parcel` and `untrack_parcel` act on tracking hubs only; an account hub's parcels come from the account itself. `update_contents` works with any set-up entry, and is the only service registered while just an account is set up.
 
 | Service | Fields | What it does |
 |---|---|---|
-| `mondial_relay.track_parcel` | `tracking_code`, optional `postal_code` | Starts following a code. With more than one tracking hub, `postal_code` picks the hub. |
+| `mondial_relay.track_parcel` | `tracking_code`, optional `postal_code`, optional `contents` | Starts following a code, optionally noting what is in it. With more than one tracking hub, `postal_code` picks the hub. |
 | `mondial_relay.untrack_parcel` | `tracking_code`, optional `postal_code` | Stops following a code — in the hub for `postal_code`, or in every tracking hub when it is left out. |
+| `mondial_relay.update_contents` | `tracking_code`, `contents`, optional `config_entry_id` | Sets what is in a parcel, tracked or not; an empty `contents` clears it. It goes to every hub or account that lists the code; name one with `config_entry_id` (needed for a code none lists yet). |
+
+The `contents` text you set is stored locally, titles the parcel's calendar event and shows on the next-delivery sensor.
 
 ```yaml
 action: mondial_relay.track_parcel

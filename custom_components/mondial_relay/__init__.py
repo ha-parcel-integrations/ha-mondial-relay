@@ -14,6 +14,7 @@ from .account.api import MondialRelayApiClient
 from .account.coordinator import MondialRelayCoordinator
 from .account.oauth import MondialRelayOAuthSession
 from .const import CONF_DEVICE_UID, CONF_REFRESH_TOKEN, DOMAIN, PLATFORMS
+from .contents import ContentsStore
 from .services import async_setup_services, async_unload_services
 from .source import is_tracking_entry
 from .tracking.api import MondialRelayTrackingClient
@@ -49,8 +50,12 @@ async def async_setup_entry(
 ) -> bool:
     """Set up Mondial Relay from a config entry."""
     if is_tracking_entry(entry):
-        return await _async_setup_tracking_entry(hass, entry)
-    return await _async_setup_account_entry(hass, entry)
+        ok = await _async_setup_tracking_entry(hass, entry)
+    else:
+        ok = await _async_setup_account_entry(hass, entry)
+    if ok:
+        async_setup_services(hass, hub=is_tracking_entry(entry))
+    return ok
 
 
 async def _async_setup_tracking_entry(
@@ -65,6 +70,7 @@ async def _async_setup_tracking_entry(
 
     client = MondialRelayTrackingClient(_session_factory, hass.config.language)
     coordinator = MondialRelayTrackingCoordinator(hass, client, entry)
+    await coordinator.contents_store.async_load()
 
     # Fetch initial data here, before forwarding to platforms. Raising
     # ConfigEntryNotReady from a forwarded platform is too late for HA to
@@ -79,7 +85,6 @@ async def _async_setup_tracking_entry(
     # disappear immediately. This is also the resume path after polling
     # fully suspended.
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
-    async_setup_services(hass)
     return True
 
 
@@ -107,6 +112,7 @@ async def _async_setup_account_entry(
         oauth, session, device_uid=entry.data[CONF_DEVICE_UID]
     )
     coordinator = MondialRelayCoordinator(hass, client, entry)
+    await coordinator.contents_store.async_load()
 
     @callback
     def _persist_rotated_refresh_token() -> None:
@@ -158,15 +164,20 @@ async def async_unload_entry(
         return False
     if entry.runtime_data.session is not None:
         await entry.runtime_data.session.close()
-    if is_tracking_entry(entry):
-        # The services are shared by every tracking hub, so they go only
-        # with the last one.
-        others_loaded = any(
-            other.entry_id != entry.entry_id
-            and other.state is ConfigEntryState.LOADED
-            and is_tracking_entry(other)
-            for other in hass.config_entries.async_entries(DOMAIN)
-        )
-        if not others_loaded:
-            async_unload_services(hass)
+    # Drop a service when the last entry that needs it goes, so unloading one
+    # entry never breaks the others.
+    others = [
+        other
+        for other in hass.config_entries.async_entries(DOMAIN)
+        if other.entry_id != entry.entry_id and other.state is ConfigEntryState.LOADED
+    ]
+    hubs_left = any(is_tracking_entry(other) for other in others)
+    async_unload_services(hass, hubs_left=hubs_left, entries_left=bool(others))
     return True
+
+
+async def async_remove_entry(
+    hass: HomeAssistant, entry: MondialRelayConfigEntry
+) -> None:
+    """Delete the entry's stored contents."""
+    await ContentsStore(hass, entry.entry_id).async_remove()

@@ -44,6 +44,7 @@ from ..const import (
     NEW_ISSUE_URL,
     ParcelStatus,
 )
+from ..contents import ContentsStore, normalize_code
 from ..events import fire_incoming_change_events
 from ..parcel_lists import apply_delivered_filter, sort_parcels_by_ts
 from ..polling import backoff_seconds, next_update_interval
@@ -112,6 +113,10 @@ class MondialRelayTrackingCoordinator(DataUpdateCoordinator[list[dict]]):
             update_interval=timedelta(minutes=HOT_INTERVAL_MINUTES),
         )
         self._client = client
+        self.contents_store = ContentsStore(hass, entry.entry_id)
+        # Every code this entry lists, delivered ones past the retention filter
+        # included: update_contents asks which entry a code belongs to.
+        self.known_codes: frozenset[str] = frozenset()
         self.delivered: list[dict] = []
         self.outgoing: list[dict] = []
         self.delivered_outgoing: list[dict] = []
@@ -131,6 +136,13 @@ class MondialRelayTrackingCoordinator(DataUpdateCoordinator[list[dict]]):
         self._cached_device_id: str | None = None
         self._refusal_warned = False
         self.last_success_time: datetime | None = None
+
+    def _apply_contents(self, parcel: dict, code: object) -> dict:
+        """Put the user's own contents text over the carrier's, when there is one."""
+        user_value = self.contents_store.get(code)
+        if user_value is not None:
+            parcel["contents"] = user_value
+        return parcel
 
     @property
     def current_tier_minutes(self) -> int | None:
@@ -282,10 +294,19 @@ class MondialRelayTrackingCoordinator(DataUpdateCoordinator[list[dict]]):
         entries = [
             (
                 code,
-                normalize_parcel(raw, page=page, include_history=include_history),
+                self._apply_contents(
+                    normalize_parcel(raw, page=page, include_history=include_history),
+                    code,
+                ),
             )
             for code, raw in raws_by_code.items()
         ]
+        self.known_codes = frozenset(
+            normalize_code(value)
+            for code, parcel in entries
+            for value in (code, parcel.get("barcode"))
+            if value
+        )
         active = [parcel for _, parcel in entries if not parcel["delivered"]]
         delivered = [parcel for _, parcel in entries if parcel["delivered"]]
         self._delivered_codes = {

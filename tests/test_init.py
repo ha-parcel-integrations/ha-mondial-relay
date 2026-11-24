@@ -211,6 +211,7 @@ async def test_an_entry_without_a_source_sets_up_as_an_account(hass):
     assert entry.runtime_data.oauth is not None
     tracking_client.assert_not_called()
     assert not hass.services.has_service(DOMAIN, "track_parcel")
+    assert hass.services.has_service(DOMAIN, "update_contents")
 
 
 # ---------------------------------------------------------------------------

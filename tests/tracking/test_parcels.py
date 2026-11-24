@@ -51,6 +51,30 @@ def test_normalize_publishes_exactly_the_canonical_keys():
     assert set(_normalize(available())) == set(normalize_account_parcel(active_item()))
 
 
+def test_normalize_publishes_the_canonical_keys_in_order():
+    assert list(_normalize(available())) == [
+        "carrier",
+        "barcode",
+        "sender",
+        "receiver",
+        "contents",
+        "status",
+        "raw_status",
+        "delivered",
+        "delivered_at",
+        "planned_from",
+        "planned_to",
+        "pickup",
+        "pickup_point",
+        "url",
+        "weight",
+        "dimensions",
+        "history",
+        "raw",
+    ]
+    assert _normalize(available())["contents"] is None
+
+
 def test_capabilities_per_variant_are_known_values():
     for variant in ("Account", "Tracking"):
         assert CAPABILITIES_BY_VARIANT[variant] <= KNOWN_CAPABILITIES

@@ -261,6 +261,7 @@ class MondialRelayNextDeliverySensor(
         return {
             "barcode": earliest.get("barcode"),
             "sender": earliest.get("sender"),
+            "contents": earliest.get("contents"),
             "receiver": earliest.get("receiver"),
         }
 

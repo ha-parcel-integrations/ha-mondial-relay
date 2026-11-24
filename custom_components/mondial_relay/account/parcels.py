@@ -108,6 +108,7 @@ def normalize_parcel(raw: dict) -> dict:
         "barcode": _barcode(expedition),
         "sender": expedition.get("brandLabel") or None,
         "receiver": None,
+        "contents": None,
         "status": status,
         "raw_status": raw_status,
         "delivered": delivered,

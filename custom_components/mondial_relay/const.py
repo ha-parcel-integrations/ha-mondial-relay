@@ -32,7 +32,15 @@ PLATFORMS = [Platform.BUTTON, Platform.CALENDAR, Platform.SENSOR]
 # Every optional key the parcel contract defines. CAPABILITIES below must be a
 # subset of this.
 KNOWN_CAPABILITIES = frozenset(
-    {"weight", "dimensions", "delivery_window", "pickup_point", "url", "history"}
+    {
+        "weight",
+        "dimensions",
+        "delivery_window",
+        "pickup_point",
+        "url",
+        "history",
+        "contents",
+    }
 )
 
 # One frozenset per source, because the two backends populate different
@@ -65,6 +73,9 @@ SOURCE_TRACKING = "tracking"
 CONF_POSTAL_CODE = "postal_code"
 CONF_PARCELS = "parcels"
 CONF_TRACKING_CODE = "tracking_code"
+# The user-set parcel contents, and the optional entry an update is limited to.
+CONF_CONTENTS = "contents"
+CONF_CONFIG_ENTRY_ID = "config_entry_id"
 
 # Mondial Relay's public tracking. The host is fixed: .be and .nl return the
 # same data, the lookup ignores the country, and .fr refuses scripted clients.

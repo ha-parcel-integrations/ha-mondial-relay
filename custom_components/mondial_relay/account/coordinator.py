@@ -37,6 +37,7 @@ from ..const import (
     NEW_ISSUE_URL,
     ParcelStatus,
 )
+from ..contents import ContentsStore, normalize_code
 from ..events import fire_incoming_change_events, fire_outgoing_change_events
 from ..parcel_lists import apply_delivered_filter, sort_parcels_by_ts
 from ..polling import backoff_seconds, next_update_interval
@@ -117,6 +118,10 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
             update_interval=timedelta(minutes=HOT_INTERVAL_MINUTES),
         )
         self._client = client
+        self.contents_store = ContentsStore(hass, entry.entry_id)
+        # Every code this entry lists, outgoing and delivered ones included:
+        # update_contents asks which entry a code belongs to.
+        self.known_codes: frozenset[str] = frozenset()
         self.delivered: list[dict] = []
         self.outgoing: list[dict] = []
         self.delivered_outgoing: list[dict] = []
@@ -195,6 +200,14 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
             )
             raise
 
+    def _apply_contents(self, parcel: dict) -> dict:
+        """Put the user's own contents text over the carrier's, when there is one."""
+        if parcel.get("barcode"):
+            user_value = self.contents_store.get(parcel["barcode"])
+            if user_value is not None:
+                parcel["contents"] = user_value
+        return parcel
+
     async def _async_poll(self) -> list[dict]:
         try:
             received_raw = await self._client.async_get_list_received()
@@ -226,8 +239,17 @@ class MondialRelayCoordinator(DataUpdateCoordinator[list[dict]]):
         overlap = _shipment_uids(received_raw) & _shipment_uids(shipped_raw)
         warn_inbox_overlap_once(len(overlap))
 
-        incoming_normalized = [normalize_parcel(item) for item in received_raw]
-        outgoing_normalized = [normalize_parcel(item) for item in shipped_raw]
+        incoming_normalized = [
+            self._apply_contents(normalize_parcel(item)) for item in received_raw
+        ]
+        outgoing_normalized = [
+            self._apply_contents(normalize_parcel(item)) for item in shipped_raw
+        ]
+        self.known_codes = frozenset(
+            normalize_code(parcel["barcode"])
+            for parcel in (*incoming_normalized, *outgoing_normalized)
+            if parcel.get("barcode")
+        )
 
         active_incoming = [p for p in incoming_normalized if not p["delivered"]]
         delivered_incoming = [p for p in incoming_normalized if p["delivered"]]

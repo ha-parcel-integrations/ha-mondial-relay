@@ -120,7 +120,15 @@ async def test_untrack_with_a_postal_code_removes_it_from_that_hub_only(hass):
     assert _codes(second) == []
 
 
-async def test_unload_removes_both_services(hass):
-    async_unload_services(hass)
+async def test_unload_removes_the_hub_services_with_the_last_hub(hass):
+    async_unload_services(hass, hubs_left=True, entries_left=True)
+    assert hass.services.has_service(DOMAIN, "track_parcel")
+    assert hass.services.has_service(DOMAIN, "update_contents")
+
+    async_unload_services(hass, hubs_left=False, entries_left=True)
     assert not hass.services.has_service(DOMAIN, "track_parcel")
     assert not hass.services.has_service(DOMAIN, "untrack_parcel")
+    assert hass.services.has_service(DOMAIN, "update_contents")
+
+    async_unload_services(hass, hubs_left=False, entries_left=False)
+    assert not hass.services.has_service(DOMAIN, "update_contents")

@@ -31,6 +31,7 @@ TO_REDACT = {
     "barcode",
     "sender",
     "receiver",
+    "contents",
     "url",
     "delivered_at",
     # the collection point says roughly where the recipient lives

@@ -325,6 +325,7 @@ def normalize_parcel(
         # response carries; no name is behind it.
         "sender": (merchant.strip() or None) if isinstance(merchant, str) else None,
         "receiver": None,
+        "contents": None,
         "status": status,
         "raw_status": raw_status,
         "delivered": delivered,

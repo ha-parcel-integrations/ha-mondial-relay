@@ -130,6 +130,10 @@
         "postal_code": {
           "name": "Code postal",
           "description": "À quel hub de suivi l'ajouter, si plusieurs sont configurés. À omettre s'il n'en existe qu'un."
+        },
+        "contents": {
+          "name": "Contenu",
+          "description": "Ce que contient le colis, avec vos propres mots. Un nouvel appel pour un colis suivi remplace le contenu ; un texte vide l'efface."
         }
       }
     },
@@ -144,6 +148,24 @@
         "postal_code": {
           "name": "Code postal",
           "description": "Le retirer uniquement du hub de suivi de ce code postal. À omettre pour le retirer de tous les hubs de suivi."
+        }
+      }
+    },
+    "update_contents": {
+      "name": "Mettre à jour le contenu du colis",
+      "description": "Définissez ce que contient un colis, avec vos propres mots, pour un numéro de suivi. Un texte vide efface le contenu.",
+      "fields": {
+        "tracking_code": {
+          "name": "Numéro de suivi",
+          "description": "Le numéro de suivi Mondial Relay."
+        },
+        "contents": {
+          "name": "Contenu",
+          "description": "Ce que contient le colis, avec vos propres mots. Un texte vide l'efface."
+        },
+        "config_entry_id": {
+          "name": "Compte",
+          "description": "Le compte pour lequel enregistrer cette valeur. Requis quand aucun compte ne connaît encore le code."
         }
       }
     }
@@ -220,6 +242,11 @@
       "parcel": {
         "name": "Colis {barcode}"
       }
+    }
+  },
+  "exceptions": {
+    "update_contents_entry_required": {
+      "message": "Aucun compte ne connaît ce code. Choisissez le compte pour lequel l'enregistrer."
     }
   }
 }
